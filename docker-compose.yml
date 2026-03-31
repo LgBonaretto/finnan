@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: finnan_postgres
+    environment:
+      POSTGRES_DB: finnan_dev
+      POSTGRES_USER: finnan
+      POSTGRES_PASSWORD: finnan123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: finnan_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

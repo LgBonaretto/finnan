@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(pnpm prisma:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist /FI \"PID eq 16592\" /FO CSV)",
+      "Bash(tasklist /FI \"PID eq 4972\" /FO CSV)",
+      "Bash(MSYS_NO_PATHCONV=1 tasklist //FI \"PID eq 16592\" //FO CSV)",
+      "Bash(MSYS_NO_PATHCONV=1 tasklist //FI \"PID eq 4972\" //FO CSV)",
+      "Bash(powershell -Command \"Get-Process -Id 16592 | Select-Object ProcessName,Id,Path; Get-Process -Id 4972 | Select-Object ProcessName,Id,Path\")",
+      "Bash(powershell -Command \"Get-Service -Name ''postgresql*'' | Select-Object Name,Status\")",
+      "Bash(powershell -Command \"Stop-Service -Name ''postgresql-x64-18'' -Force\")",
+      "Bash(pnpm next:*)",
+      "Bash(mkdir -p \"app/\\(admin\\)/admin/dashboard\" \"app/\\(admin\\)/admin/groups\" \"app/\\(admin\\)/admin/users\")",
+      "Bash(mv \"app/\\(admin\\)/dashboard/page.tsx\" \"app/\\(admin\\)/admin/dashboard/page.tsx\")",
+      "Bash(mv \"app/\\(admin\\)/groups/page.tsx\" \"app/\\(admin\\)/admin/groups/page.tsx\")",
+      "Bash(mv \"app/\\(admin\\)/users/page.tsx\" \"app/\\(admin\\)/admin/users/page.tsx\")",
+      "Bash(rm -rf \"app/\\(admin\\)/dashboard\" \"app/\\(admin\\)/groups\" \"app/\\(admin\\)/users\")",
+      "Bash(kill %1)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm build:*)"
+    ]
+  }
+}
