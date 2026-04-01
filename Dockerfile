@@ -11,6 +11,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV NODE_OPTIONS='--max-old-space-size=2048'
 RUN corepack enable pnpm && pnpm build
 
 FROM base AS runner
