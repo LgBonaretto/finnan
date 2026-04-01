@@ -102,7 +102,7 @@ export function AppHeader({ user }: AppHeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => signOut({ redirectTo: '/login' })}
               className="text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 size-4" />

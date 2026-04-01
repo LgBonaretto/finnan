@@ -425,7 +425,7 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
             <CardContent>
               <Button
                 variant="outline"
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={() => signOut({ redirectTo: '/login' })}
               >
                 Sair da conta
               </Button>
