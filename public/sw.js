@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finnan-v1'
+const CACHE_NAME = 'tukkan-v1'
 
 const STATIC_ASSETS = [
   '/offline',

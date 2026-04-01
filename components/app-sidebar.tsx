@@ -65,7 +65,7 @@ export function AppSidebar({ className }: { className?: string }) {
       {/* Footer */}
       <div className="border-t border-sidebar-border px-5 py-3">
         <p className="text-[11px] text-sidebar-foreground/40">
-          Finnan v0.1.0
+          Tukkan v0.1.0
         </p>
       </div>
     </div>

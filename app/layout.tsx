@@ -20,12 +20,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finnan — Finanças em família",
-  description: "Organize suas finanças pessoais e familiares com o Finnan",
+  title: "Tukkan — Finanças em família",
+  description: "Organize suas finanças pessoais e familiares com o Tukkan",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Finnan",
+    title: "Tukkan",
   },
   other: {
     "mobile-web-app-capable": "yes",

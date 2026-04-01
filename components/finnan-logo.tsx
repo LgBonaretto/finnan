@@ -34,7 +34,7 @@ export function FinnanLogo({
   return (
     <Image
       src={src}
-      alt="Finnan"
+      alt="Tukkan"
       width={Math.round(height * 3.5)}
       height={height}
       className={className}

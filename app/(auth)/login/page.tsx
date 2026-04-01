@@ -92,7 +92,7 @@ export default function LoginPage() {
 
         {/* Bottom line */}
         <div className="absolute bottom-8 left-0 right-0 text-center">
-          <span className="text-xs text-neutral-300">finnan.app</span>
+          <span className="text-xs text-neutral-300">tukkan.app</span>
         </div>
       </div>
 

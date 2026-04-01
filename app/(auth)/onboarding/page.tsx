@@ -108,10 +108,10 @@ export default function OnboardingPage() {
           <Card className="border-0 shadow-none sm:border sm:shadow-sm">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">
-                Bem-vindo ao Finnan!
+                Bem-vindo ao Tukkan!
               </CardTitle>
               <CardDescription>
-                Vamos configurar seu espaço. Como você vai usar o Finnan?
+                Vamos configurar seu espaço. Como você vai usar o Tukkan?
               </CardDescription>
             </CardHeader>
 

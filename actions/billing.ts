@@ -62,7 +62,7 @@ export async function createCheckoutSession(groupId: string, planId: PlanId) {
           unit_amount: plan.priceMonthly,
           recurring: { interval: 'month' },
           product_data: {
-            name: `Finnan ${plan.name}`,
+            name: `Tukkan ${plan.name}`,
             description: plan.description,
           },
         },

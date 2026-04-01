@@ -9,7 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const DISMISSED_KEY = 'finnan-pwa-dismissed'
+const DISMISSED_KEY = 'tukkan-pwa-dismissed'
 
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
@@ -57,7 +57,7 @@ export function PWAInstallPrompt() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">
-            Instalar o Finnan
+            Instalar o Tukkan
           </p>
           <p className="text-xs text-muted-foreground">
             Acesse mais rápido direto da tela inicial

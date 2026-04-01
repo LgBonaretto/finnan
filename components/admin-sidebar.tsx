@@ -62,7 +62,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
     <aside className="hidden w-60 shrink-0 border-r border-border bg-neutral-950 md:flex md:flex-col">
       <div className="flex h-14 items-center gap-2 px-5">
         <Link href="/admin/dashboard" className="text-base font-bold text-white">
-          Finnan
+          Tukkan
         </Link>
         <Badge variant="secondary" className="text-[10px]">Admin</Badge>
       </div>

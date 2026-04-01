@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Finnan - Finanças Colaborativas',
-    short_name: 'Finnan',
+    name: 'Tukkan - Finanças Colaborativas',
+    short_name: 'Tukkan',
     description: 'Controle financeiro para famílias e grupos',
     start_url: '/dashboard',
     display: 'standalone',
