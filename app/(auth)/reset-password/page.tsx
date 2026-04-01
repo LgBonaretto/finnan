@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod/v4'
@@ -33,7 +33,7 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -71,113 +71,120 @@ export default function ResetPasswordPage() {
   }
 
   return (
+    <Card className="border-0 shadow-none sm:border sm:shadow-sm">
+      {success ? (
+        <>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">
+              Senha redefinida
+            </CardTitle>
+            <CardDescription>
+              Sua senha foi alterada com sucesso. Você já pode fazer login.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/login" className="w-full">
+              <Button className="w-full">Ir para o login</Button>
+            </Link>
+          </CardFooter>
+        </>
+      ) : !token ? (
+        <>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">
+              Link inválido
+            </CardTitle>
+            <CardDescription>
+              Este link de redefinição de senha é inválido ou expirou.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/forgot-password" className="w-full">
+              <Button variant="outline" className="w-full">
+                Solicitar novo link
+              </Button>
+            </Link>
+          </CardFooter>
+        </>
+      ) : (
+        <>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">
+              Nova senha
+            </CardTitle>
+            <CardDescription>
+              Digite sua nova senha abaixo
+            </CardDescription>
+          </CardHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Nova senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  {...register('confirmPassword')}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+
+            <CardFooter>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Salvando...' : 'Redefinir senha'}
+              </Button>
+            </CardFooter>
+          </form>
+        </>
+      )}
+    </Card>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="mb-8 flex justify-center">
           <FinnanLogo height={40} />
         </div>
 
-        <Card className="border-0 shadow-none sm:border sm:shadow-sm">
-          {success ? (
-            <>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">
-                  Senha redefinida
-                </CardTitle>
-                <CardDescription>
-                  Sua senha foi alterada com sucesso. Você já pode fazer login.
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Link href="/login" className="w-full">
-                  <Button className="w-full">Ir para o login</Button>
-                </Link>
-              </CardFooter>
-            </>
-          ) : !token ? (
-            <>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">
-                  Link inválido
-                </CardTitle>
-                <CardDescription>
-                  Este link de redefinição de senha é inválido ou expirou.
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Link href="/forgot-password" className="w-full">
-                  <Button variant="outline" className="w-full">
-                    Solicitar novo link
-                  </Button>
-                </Link>
-              </CardFooter>
-            </>
-          ) : (
-            <>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">
-                  Nova senha
-                </CardTitle>
-                <CardDescription>
-                  Digite sua nova senha abaixo
-                </CardDescription>
-              </CardHeader>
-
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <CardContent className="space-y-4">
-                  {error && (
-                    <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Nova senha</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      {...register('password')}
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-destructive">
-                        {errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirmar senha</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      {...register('confirmPassword')}
-                    />
-                    {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">
-                        {errors.confirmPassword.message}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-
-                <CardFooter>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Salvando...' : 'Redefinir senha'}
-                  </Button>
-                </CardFooter>
-              </form>
-            </>
-          )}
-        </Card>
+        <Suspense fallback={<div>Carregando...</div>}>
+          <ResetPasswordForm />
+        </Suspense>
       </div>
     </div>
   )
