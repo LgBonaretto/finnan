@@ -3,6 +3,8 @@
 import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { checkPlanLimit } from '@/lib/plan-limits'
+import { sendInviteEmail } from '@/lib/email'
 import { redirect } from 'next/navigation'
 import { MemberRole } from '@/app/generated/prisma/client'
 
@@ -46,6 +48,9 @@ export async function inviteMember(
   const user = await requireUser()
   await requireRole(user.id, groupId, ['owner', 'admin'])
 
+  const limit = await checkPlanLimit(groupId, 'members')
+  if (!limit.allowed) return { error: limit.message }
+
   const token = randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
@@ -58,10 +63,28 @@ export async function inviteMember(
       invitedBy: user.id,
       expiresAt,
     },
+    include: {
+      group: { select: { name: true } },
+    },
   })
 
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
   const inviteUrl = `${baseUrl}/invite/${invite.token}`
+
+  // Send invite email if email provided
+  if (email) {
+    try {
+      await sendInviteEmail({
+        to: email,
+        groupName: invite.group.name,
+        inviterName: user.name ?? 'Alguém',
+        inviteUrl,
+      })
+    } catch (err) {
+      console.error('[INVITE] Failed to send email:', err)
+      // Don't fail the invite if email fails — the link still works
+    }
+  }
 
   return { success: true, inviteUrl, token: invite.token }
 }
@@ -114,15 +137,19 @@ export async function acceptInvite(token: string) {
     include: { group: { select: { name: true } } },
   })
 
-  if (!invite) throw new Error('Convite não encontrado.')
-  if (invite.acceptedAt) throw new Error('Este convite já foi utilizado.')
-  if (invite.expiresAt < new Date()) throw new Error('Este convite expirou.')
+  if (!invite) return { error: 'Convite não encontrado.' }
+  if (invite.acceptedAt) return { error: 'Este convite já foi utilizado.' }
+  if (invite.declinedAt) return { error: 'Este convite foi recusado.' }
+  if (invite.expiresAt < new Date()) return { error: 'Este convite expirou.' }
 
   const existing = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId: invite.groupId, userId: user.id } },
   })
 
-  if (existing) throw new Error('Você já é membro deste grupo.')
+  if (existing) return { error: 'Você já é membro deste grupo.' }
+
+  const limit = await checkPlanLimit(invite.groupId, 'members')
+  if (!limit.allowed) return { error: limit.message }
 
   await prisma.$transaction([
     prisma.groupMember.create({
@@ -137,9 +164,31 @@ export async function acceptInvite(token: string) {
       where: { token },
       data: { acceptedAt: new Date() },
     }),
+    // Mark onboarding as completed for invited users
+    prisma.user.update({
+      where: { id: user.id },
+      data: { onboardingCompleted: true },
+    }),
   ])
 
   return { success: true, groupName: invite.group.name }
+}
+
+export async function declineInvite(token: string) {
+  const invite = await prisma.groupInvite.findUnique({
+    where: { token },
+  })
+
+  if (!invite) return { error: 'Convite não encontrado.' }
+  if (invite.acceptedAt) return { error: 'Este convite já foi aceito.' }
+  if (invite.declinedAt) return { error: 'Este convite já foi recusado.' }
+
+  await prisma.groupInvite.update({
+    where: { token },
+    data: { declinedAt: new Date() },
+  })
+
+  return { success: true }
 }
 
 export async function getInviteInfo(token: string) {
@@ -152,11 +201,19 @@ export async function getInviteInfo(token: string) {
 
   if (!invite) return null
   if (invite.acceptedAt) return { expired: true, reason: 'used' as const }
+  if (invite.declinedAt) return { expired: true, reason: 'declined' as const }
   if (invite.expiresAt < new Date()) return { expired: true, reason: 'expired' as const }
+
+  const inviter = await prisma.user.findUnique({
+    where: { id: invite.invitedBy },
+    select: { name: true },
+  })
 
   return {
     expired: false,
     groupName: invite.group.name,
+    inviterName: inviter?.name ?? 'Alguém',
     role: invite.role,
+    email: invite.email,
   }
 }

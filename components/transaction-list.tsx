@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { formatMoney } from '@/lib/money'
 import { getTransactions, deleteTransaction } from '@/actions/transactions'
+import { Plus, Trash2, ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -127,22 +128,22 @@ export function TransactionList({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Transações</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-bold text-foreground md:text-2xl">Transações</h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie receitas e despesas do grupo
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="hidden sm:inline-flex">
           <Link href="/transactions/new">Nova transação</Link>
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
         <Select
           value={currentMonth ?? 'all'}
           onValueChange={(v) => updateFilter('month', v)}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="sm:w-48">
             <SelectValue placeholder="Mês" />
           </SelectTrigger>
           <SelectContent>
@@ -159,7 +160,7 @@ export function TransactionList({
           value={currentType ?? 'all'}
           onValueChange={(v) => updateFilter('type', v)}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="sm:w-40">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -173,7 +174,7 @@ export function TransactionList({
           value={currentCategoryId ?? 'all'}
           onValueChange={(v) => updateFilter('categoryId', v)}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="col-span-2 sm:w-44">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -191,12 +192,7 @@ export function TransactionList({
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-muted">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-                <path d="M17 3L21 7L17 11" />
-                <path d="M3 7H21" />
-                <path d="M7 21L3 17L7 13" />
-                <path d="M21 17H3" />
-              </svg>
+              <ArrowLeftRight className="size-5 text-muted-foreground" />
             </div>
             <CardTitle>Nenhuma transação</CardTitle>
             <CardDescription>
@@ -216,23 +212,28 @@ export function TransactionList({
               {transactions.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center gap-4 px-6 py-3"
+                  className="flex items-center gap-3 px-4 py-3 md:gap-4 md:px-6"
                 >
-                  <div className="w-12 shrink-0 text-sm text-muted-foreground">
+                  <div className="hidden w-12 shrink-0 text-sm text-muted-foreground sm:block">
                     {formatDate(t.date)}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {t.description || 'Sem descrição'}
-                    </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-baseline gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {t.description || 'Sem descrição'}
+                      </p>
+                      <span className="shrink-0 text-xs text-muted-foreground sm:hidden">
+                        {formatDate(t.date)}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
                       {t.category && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-[10px]">
                           {t.category.name}
                         </Badge>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="hidden text-xs text-muted-foreground sm:inline">
                         {t.user.name}
                       </span>
                     </div>
@@ -251,14 +252,10 @@ export function TransactionList({
                     type="button"
                     onClick={() => handleDelete(t.id)}
                     disabled={isDeleting === t.id}
-                    className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                    className="hidden shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 sm:block"
                     title="Excluir"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                    </svg>
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               ))}
@@ -278,6 +275,17 @@ export function TransactionList({
           )}
         </Card>
       )}
+
+      {/* Mobile FAB */}
+      <Button
+        asChild
+        size="icon-lg"
+        className="fixed bottom-6 right-6 z-50 size-14 rounded-full shadow-lg sm:hidden"
+      >
+        <Link href="/transactions/new">
+          <Plus className="size-6" />
+        </Link>
+      </Button>
     </div>
   )
 }

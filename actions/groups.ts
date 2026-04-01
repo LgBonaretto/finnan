@@ -67,15 +67,45 @@ export async function getGroups() {
       group: {
         include: {
           _count: { select: { members: true } },
+          members: {
+            take: 4,
+            orderBy: { joinedAt: 'asc' },
+            include: { user: { select: { name: true } } },
+          },
         },
       },
     },
     orderBy: { joinedAt: 'asc' },
   })
 
+  // Fetch month expenses for all groups in one go
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const groupIds = memberships.map((m) => m.groupId)
+
+  const expensesByGroup = groupIds.length > 0
+    ? await prisma.transaction.groupBy({
+        by: ['groupId'],
+        where: {
+          groupId: { in: groupIds },
+          type: 'expense',
+          deletedAt: null,
+          date: { gte: monthStart, lt: monthEnd },
+        },
+        _sum: { amount: true },
+      })
+    : []
+
+  const expenseMap = new Map(
+    expensesByGroup.map((e) => [e.groupId, Number(e._sum.amount ?? 0)]),
+  )
+
   return memberships.map((m) => ({
     ...m.group,
     role: m.role,
     memberCount: m.group._count.members,
+    memberNames: m.group.members.map((gm) => gm.user.name ?? 'Sem nome'),
+    monthExpense: expenseMap.get(m.groupId) ?? 0,
   }))
 }

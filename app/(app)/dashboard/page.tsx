@@ -3,7 +3,13 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatMoney } from '@/lib/money'
-import { Badge } from '@/components/ui/badge'
+import {
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Users,
+  AlertTriangle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -193,54 +199,62 @@ export default async function DashboardPage() {
       title: 'Saldo total',
       value: formatMoney(data.balance),
       description: 'Receitas - Despesas (total)',
+      icon: Scale,
+      iconBg: 'bg-primary/10 text-primary',
     },
     {
       title: 'Receitas do mês',
       value: formatMoney(data.monthIncome),
       description: 'Entradas este mês',
       color: 'text-green-600',
+      icon: TrendingUp,
+      iconBg: 'bg-green-600/10 text-green-600',
     },
     {
       title: 'Despesas do mês',
       value: formatMoney(data.monthExpense),
       description: 'Saídas este mês',
       color: 'text-red-500',
+      icon: TrendingDown,
+      iconBg: 'bg-red-500/10 text-red-500',
     },
     {
       title: 'Grupos',
       value: String(data.groupCount),
       description: 'Grupos ativos',
+      icon: Users,
+      iconBg: 'bg-primary/10 text-primary',
     },
   ]
 
   const maxExpense = Math.max(...data.monthlyExpenses.map((m) => m.value), 1)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="text-xl font-bold text-foreground md:text-2xl">
           Olá, {session.user.name?.split(' ')[0] ?? 'usuário'}!
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Veja o resumo das suas finanças
         </p>
       </div>
 
       {/* Summary cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         {summaryCards.map((card) => (
           <Card key={card.title}>
             <CardHeader>
-              <CardDescription>{card.title}</CardDescription>
-              <CardTitle className={`text-2xl ${card.color ?? 'text-foreground'}`}>
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-xs">{card.title}</CardDescription>
+                <div className={`flex size-8 items-center justify-center rounded-lg ${card.iconBg}`}>
+                  <card.icon className="size-4" />
+                </div>
+              </div>
+              <CardTitle className={`text-lg md:text-2xl ${card.color ?? 'text-foreground'}`}>
                 {card.value}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                {card.description}
-              </p>
-            </CardContent>
           </Card>
         ))}
       </div>
@@ -264,24 +278,24 @@ export default async function DashboardPage() {
         <>
           {/* Budget alerts */}
           {data.budgetAlerts.length > 0 && (
-            <Card>
+            <Card className="border-destructive/20">
               <CardHeader>
-                <CardTitle className="text-base">Alertas de orçamento</CardTitle>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-destructive" />
+                  <CardTitle className="text-base">Alertas de orçamento</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {data.budgetAlerts.map((alert) => (
                   <div
                     key={alert.name}
-                    className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2"
+                    className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-red-500" />
-                      <span className="text-sm font-medium text-foreground">
-                        {alert.name}
-                      </span>
-                    </div>
-                    <span className="text-sm text-red-500">
-                      {formatMoney(alert.spent)} de {formatMoney(alert.limit)}{' '}
+                    <span className="text-sm font-medium text-foreground">
+                      {alert.name}
+                    </span>
+                    <span className="text-xs font-medium text-destructive md:text-sm">
+                      {formatMoney(alert.spent)} / {formatMoney(alert.limit)}{' '}
                       ({alert.percent}%)
                     </span>
                   </div>

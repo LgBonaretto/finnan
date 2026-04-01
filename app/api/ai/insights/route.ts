@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { anthropic } from '@/lib/anthropic'
+import { canUseAI } from '@/lib/plan-limits'
 import { formatMoney } from '@/lib/money'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +28,14 @@ export async function POST(req: NextRequest) {
   })
   if (!member) {
     return NextResponse.json({ error: 'Sem acesso' }, { status: 403 })
+  }
+
+  // Plan check
+  const aiAllowed = await canUseAI(groupId)
+  if (!aiAllowed) {
+    return NextResponse.json({
+      insights: 'Insights com IA estão disponíveis nos planos Family e Group. Faça upgrade para desbloquear.',
+    })
   }
 
   // Rate limit check

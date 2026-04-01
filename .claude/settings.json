@@ -1,7 +1,41 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh --version)"
+      "Bash(gh --version)",
+      "Bash(curl -s -b /tmp/finnan_cookies -o /dev/null -w \"%{http_code}\" http://localhost:3000/admin/dashboard)",
+      "Bash(pnpm add:*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/callback/credentials -H \"Content-Type: application/x-www-form-urlencoded\" -d \"email=luis@finnan.com&password=teste123\" -D -)",
+      "Bash(curl -s http://localhost:3000/api/auth/csrf)",
+      "Bash(curl -v -s -X POST http://localhost:3000/api/auth/callback/credentials -H \"Content-Type: application/x-www-form-urlencoded\" -c /tmp/cookies.txt -b /tmp/cookies.txt -d \"csrfToken=a4ccb49750f476dfab9252e409811754521d60e06a2bf9da20e4978fef2dfc0d&email=luis@finnan.com&password=teste123\")",
+      "Bash(node -e \"const m = require\\(''next-auth/react''\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(curl -s -X POST http://localhost:3000/register -H \"Content-Type: application/x-www-form-urlencoded\" -H \"Origin: http://192.168.0.103:3000\" -H \"Next-Action: test\" -D -)",
+      "Bash(curl -s -c /tmp/cookies2.txt http://localhost:3000/api/auth/csrf)",
+      "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\)[''''csrfToken'''']\\)\")",
+      "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>console.log\\(JSON.parse\\(d\\).csrfToken\\)\\)\")",
+      "Bash(curl -s -b /tmp/cookies2.txt -c /tmp/cookies2.txt -X POST \"http://localhost:3000/api/auth/callback/credentials\" -H \"Content-Type: application/x-www-form-urlencoded\" -d \"csrfToken=65992b6e805324127e351af7d6933139e042374262a8be315f0380301caea0cb&email=luis@finnan.com&password=123456&redirect=false&callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard&json=true\" -w \"\\\\n---STATUS: %{http_code}---\\\\nLOCATION: %{redirect_url}\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -b /tmp/cookies2.txt http://localhost:3000/api/auth/session)",
+      "Bash(curl -s -c /tmp/cookies3.txt http://localhost:3000/api/auth/csrf)",
+      "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>{const t=JSON.parse\\(d\\).csrfToken;:*)",
+      "Bash(curl -s -b /tmp/cookies4.txt http://192.168.0.103:3000/api/auth/session)",
+      "Bash(curl -s http://localhost:3000/login)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000/api/auth/session)",
+      "Bash(curl -s http://localhost:3000/api/auth/providers)",
+      "Bash(curl -s -b /tmp/login_test.txt http://localhost:3000/api/auth/session)",
+      "Bash(curl -s -H \"Cookie: authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiQkc2Q3dSeFkyUTZxRU10OVgxMEg5eC1WVXYya0xtcUxFcVFiT2QwQXY5N2gyRXIzTzQ5N1RrSE5wcFFFLU8tT051WjJHakFhcUExTGlQUTVDSHl1QncifQ..TaDCFIl-cEdggRN8iJiAQQ.dHVB_StBq0F88GUOmyrEoXt-ih8cowSI9VYBUTXJgzIsYb23-VPerQFMOTPykCa4qJmdmKvMJnsdhf-QqglSpK33XGAmn--_R2Dd0N04t9f6UErzhKphs7lrHeGlnJN-FCBBHA0IbuB43bO8sXoleMkt-UsQyVPRhbQOtM7Cnnml0phJrDJUBEmuXLmi26ZmXFqY7jNVboRFRBz1az0MX0njzSWwrLoCYsizwGplekJhRagwkHWUD9TVRSYPXk-ujbqGo2taqD6frEwm-sp50jeFAQiw3uIz9pLGvhO_lBJpDjRt3h04ZOEl0WRSr6qXXzz37lMswWOt8MrJuFF_3PeR652P2AYuDxRLSQG3IfNTsgdpoV4PVjMHf4ccmIOU0YZYPajmv_NtIliJUvwgnsDfSC67lTc78C5-yiOosCI.SiYSA1CKutPTfbda6zfMiGZKvaD03lQq_YXrctNeSc4\" http://localhost:3000/api/auth/session)",
+      "Bash(curl -s -b /tmp/fresh_cookies.txt http://localhost:3000/api/auth/session -v)",
+      "Bash(curl -s -b /tmp/fresh_cookies.txt http://localhost:3000/api/auth/session -D /tmp/session_headers.txt)",
+      "Bash(node -e \"console.log\\(require\\(''next-themes/package.json''\\).version\\)\")",
+      "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>console.log\\(JSON.parse\\(d\\).version\\)\\)\")",
+      "Bash(find \"/c/Users/luisg/OneDrive/Documentos/App v2/finnan/app/\\(app\\)\" -maxdepth 2 -type d)",
+      "Bash(npx tsx:*)",
+      "Bash(ls -la \"/c/Users/luisg/OneDrive/Documentos/App v2/finnan/public/logo\"*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\luisg\\OneDrive\\Documentos\\App v2\\finnan\\app\\(auth)\\invite"
     ]
   }
 }

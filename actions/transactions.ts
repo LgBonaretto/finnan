@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit'
+import { checkPlanLimit } from '@/lib/plan-limits'
 import { redirect } from 'next/navigation'
 import { Prisma } from '@/app/generated/prisma/client'
 
@@ -34,6 +35,9 @@ export async function createTransaction(data: {
 }) {
   const user = await requireUser()
   await requireMembership(user.id, data.groupId)
+
+  const limit = await checkPlanLimit(data.groupId, 'transactionsPerMonth')
+  if (!limit.allowed) return { error: limit.message }
 
   const transaction = await prisma.transaction.create({
     data: {

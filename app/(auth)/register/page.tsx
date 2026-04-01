@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod/v4'
-import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 import { registerUser } from '@/actions/auth'
+import { acceptInvite } from '@/actions/members'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,7 +37,8 @@ const registerSchema = z
 type RegisterValues = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get('invite')
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -49,18 +52,44 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterValues) {
     setError(null)
 
-    const result = await registerUser({
-      name: data.name,
-      email: data.email,
-      password: data.password,
-    })
+    try {
+      const result = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      })
 
-    if (result.error) {
-      setError(result.error)
-      return
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+
+      if (inviteToken) {
+        const signInResult = await signIn('credentials', {
+          email: data.email,
+          password: data.password,
+          redirect: false,
+        })
+
+        if (signInResult?.error) {
+          window.location.href = `/login?registered=true&invite=${inviteToken}`
+          return
+        }
+
+        try {
+          await acceptInvite(inviteToken)
+        } catch {
+          // Invite accept failed but account was created
+        }
+
+        window.location.href = '/dashboard'
+        return
+      }
+
+      window.location.href = '/login?registered=true'
+    } catch {
+      setError('Erro ao criar conta. Tente novamente.')
     }
-
-    router.push('/login?registered=true')
   }
 
   return (
@@ -69,7 +98,9 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Criar conta</CardTitle>
           <CardDescription>
-            Comece a organizar suas finanças em família
+            {inviteToken
+              ? 'Crie sua conta para aceitar o convite'
+              : 'Comece a organizar suas finanças em família'}
           </CardDescription>
         </CardHeader>
 

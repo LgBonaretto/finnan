@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { checkPlanLimit } from '@/lib/plan-limits'
 import { redirect } from 'next/navigation'
 import { Prisma } from '@/app/generated/prisma/client'
 
@@ -58,6 +59,9 @@ export async function createGoal(data: {
 }) {
   const user = await requireUser()
   await requireMembership(user.id, data.groupId)
+
+  const limit = await checkPlanLimit(data.groupId, 'goals')
+  if (!limit.allowed) return { error: limit.message }
 
   const goal = await prisma.goal.create({
     data: {

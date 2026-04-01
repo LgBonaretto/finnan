@@ -1,8 +1,27 @@
 'use client'
 
+import { useState } from 'react'
+import Link from 'next/link'
 import { signOut } from 'next-auth/react'
+import { Menu, LogOut, User, CreditCard } from 'lucide-react'
+import { FinnanLogo } from '@/components/finnan-logo'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { AppSidebar } from '@/components/app-sidebar'
 
 function getInitials(name?: string | null) {
   if (!name) return '?'
@@ -22,36 +41,75 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ user }: AppHeaderProps) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-6">
-      <div className="md:hidden">
-        <span className="text-lg font-bold">Finnan</span>
+    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+      {/* Mobile: hamburger + logo */}
+      <div className="flex items-center gap-2 md:hidden">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon-sm">
+              <Menu className="size-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 bg-sidebar p-0">
+            <SheetTitle className="sr-only">Navegação</SheetTitle>
+            <AppSidebar className="h-full" />
+          </SheetContent>
+        </Sheet>
+
+        <FinnanLogo height={24} />
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
-        <div className="hidden items-center gap-2 sm:flex">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-primary text-xs text-primary-foreground">
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium text-foreground">
-            {user.name}
-          </span>
-        </div>
+      {/* Desktop: spacer */}
+      <div className="hidden md:block" />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => signOut({ callbackUrl: '/login' })}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          <span className="hidden sm:inline">Sair</span>
-        </Button>
+      {/* Right side */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="gap-2 px-2">
+              <Avatar className="size-7">
+                <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden text-sm font-medium text-foreground sm:inline">
+                {user.name}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <User className="mr-2 size-4" />
+                Perfil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/billing">
+                <CreditCard className="mr-2 size-4" />
+                Planos
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="mr-2 size-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )

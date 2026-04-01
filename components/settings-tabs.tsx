@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { updateProfile, updateGroup } from '@/actions/auth'
 import { inviteMember, removeMember, updateMemberRole } from '@/actions/members'
@@ -112,8 +113,12 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
     startTransition(async () => {
       try {
         const result = await inviteMember(group.id, inviteEmail, inviteRole)
-        setInviteUrl(result.inviteUrl)
-        setInviteEmail('')
+        if ('error' in result) {
+          setInviteMsg(result.error as string)
+        } else {
+          setInviteUrl(result.inviteUrl)
+          setInviteEmail('')
+        }
       } catch (err) {
         setInviteMsg(err instanceof Error ? err.message : 'Erro ao convidar.')
       }
@@ -396,6 +401,20 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
 
         {/* ── Account ── */}
         <TabsContent value="account" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plano e assinatura</CardTitle>
+              <CardDescription>
+                Gerencie o plano do seu grupo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild>
+                <Link href="/settings/billing">Ver planos</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Sessão</CardTitle>
