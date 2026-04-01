@@ -52,18 +52,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-neutral-950">
+    <div className="flex min-h-screen">
       {/* Left side - Branding */}
-      <div className="relative hidden w-1/2 overflow-hidden lg:flex">
+      <div className="relative hidden w-1/2 overflow-hidden bg-neutral-950 lg:flex">
         {/* Ambient glow */}
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.07] blur-[120px]" />
-        <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-teal-500/[0.05] blur-[100px]" />
+        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.03] blur-[120px]" />
 
         {/* Dot grid */}
         <div
           className="absolute inset-0 opacity-[0.15]"
           style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)',
             backgroundSize: '32px 32px',
           }}
         />
@@ -84,8 +83,8 @@ export default function LoginPage() {
               'Insights com IA',
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
-                <div className="h-1 w-1 rounded-full bg-emerald-500" />
-                <span className="text-sm text-neutral-600">{item}</span>
+                <div className="h-1 w-1 rounded-full bg-white" />
+                <span className="text-sm text-neutral-500">{item}</span>
               </div>
             ))}
           </div>
@@ -93,38 +92,36 @@ export default function LoginPage() {
 
         {/* Bottom line */}
         <div className="absolute bottom-8 left-0 right-0 text-center">
-          <span className="text-xs text-neutral-700">
-            finnan.app
-          </span>
+          <span className="text-xs text-neutral-700">finnan.app</span>
         </div>
       </div>
 
       {/* Right side - Login form */}
-      <div className="flex w-full flex-col items-center justify-center px-6 lg:w-1/2">
+      <div className="flex w-full flex-col items-center justify-center bg-white px-6 lg:w-1/2">
         {/* Logo on mobile */}
         <div className="mb-12 lg:hidden">
-          <FinnanLogo height={36} variant="dark" />
+          <FinnanLogo height={36} variant="light" />
         </div>
 
         <div className="w-full max-w-[360px]">
           <div className="mb-10">
-            <h1 className="text-2xl font-semibold tracking-tight text-white">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
               Entrar
             </h1>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-neutral-400">
               Continue de onde parou
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+              <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-neutral-400">
                 Email
               </Label>
               <Input
@@ -132,22 +129,22 @@ export default function LoginPage() {
                 type="email"
                 placeholder="seu@email.com"
                 autoComplete="email"
-                className="h-12 rounded-lg border-neutral-800 bg-neutral-900 text-white placeholder:text-neutral-600 transition-all focus:border-emerald-500/50 focus:ring-emerald-500/10"
+                className="h-12 rounded-lg border-neutral-200 bg-neutral-50 text-neutral-900 placeholder:text-neutral-300 transition-all focus:border-neutral-900 focus:bg-white focus:ring-neutral-900/5"
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-xs text-red-400">{errors.email.message}</p>
+                <p className="text-xs text-red-500">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-neutral-400">
                   Senha
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-neutral-600 transition-colors hover:text-emerald-400"
+                  className="text-xs text-neutral-400 transition-colors hover:text-neutral-900"
                 >
                   Esqueceu?
                 </Link>
@@ -157,11 +154,11 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className="h-12 rounded-lg border-neutral-800 bg-neutral-900 text-white placeholder:text-neutral-600 transition-all focus:border-emerald-500/50 focus:ring-emerald-500/10"
+                className="h-12 rounded-lg border-neutral-200 bg-neutral-50 text-neutral-900 placeholder:text-neutral-300 transition-all focus:border-neutral-900 focus:bg-white focus:ring-neutral-900/5"
                 {...register('password')}
               />
               {errors.password && (
-                <p className="text-xs text-red-400">
+                <p className="text-xs text-red-500">
                   {errors.password.message}
                 </p>
               )}
@@ -170,7 +167,7 @@ export default function LoginPage() {
             <div className="pt-2">
               <Button
                 type="submit"
-                className="h-12 w-full rounded-lg bg-emerald-500 text-sm font-semibold text-neutral-950 transition-all hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50"
+                className="h-12 w-full rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-all hover:bg-neutral-800 active:scale-[0.98] disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -189,16 +186,16 @@ export default function LoginPage() {
 
             {/* Divider */}
             <div className="flex items-center gap-3 pt-2">
-              <div className="h-px flex-1 bg-neutral-800" />
-              <span className="text-xs text-neutral-600">ou</span>
-              <div className="h-px flex-1 bg-neutral-800" />
+              <div className="h-px flex-1 bg-neutral-100" />
+              <span className="text-xs text-neutral-300">ou</span>
+              <div className="h-px flex-1 bg-neutral-100" />
             </div>
 
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-neutral-400">
               Primeira vez?{' '}
               <Link
                 href="/register"
-                className="font-medium text-emerald-400 transition-colors hover:text-emerald-300"
+                className="font-medium text-neutral-900 transition-colors hover:text-neutral-600"
               >
                 Criar conta
               </Link>
