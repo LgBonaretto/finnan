@@ -9,6 +9,9 @@ import {
   Scale,
   Users,
   AlertTriangle,
+  Plus,
+  Target,
+  UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,7 +40,7 @@ async function getDashboardData(userId: string) {
       recentTransactions: [],
       activeGoals: [],
       budgetAlerts: [],
-      monthlyExpenses: [],
+      monthlyData: [],
       groupId: null,
     }
   }
@@ -64,7 +67,7 @@ async function getDashboardData(userId: string) {
     activeGoals,
     budgets,
     monthExpensesByCategory,
-    last6MonthsExpenses,
+    last6MonthsTransactions,
   ] = await Promise.all([
     prisma.transaction.aggregate({
       where: { groupId: { in: groupIds }, type: 'income', deletedAt: null, date: { gte: monthStart, lt: monthEnd } },
@@ -105,15 +108,14 @@ async function getDashboardData(userId: string) {
       where: { groupId: { in: groupIds }, type: 'expense', deletedAt: null, date: { gte: monthStart, lt: monthEnd } },
       _sum: { amount: true },
     }),
-    // Expenses for last 6 months
+    // All transactions for last 6 months (income + expense)
     prisma.transaction.findMany({
       where: {
         groupId: { in: groupIds },
-        type: 'expense',
         deletedAt: null,
         date: { gte: monthRanges[0].start, lt: monthRanges[5].end },
       },
-      select: { date: true, amount: true },
+      select: { date: true, amount: true, type: true },
     }),
   ])
 
@@ -137,15 +139,18 @@ async function getDashboardData(userId: string) {
     .filter((a) => a.percent > 80)
     .sort((a, b) => b.percent - a.percent)
 
-  // Monthly chart data
-  const monthlyExpenses = monthRanges.map((range) => {
-    const total = last6MonthsExpenses
-      .filter((t) => {
-        const d = new Date(t.date)
-        return d >= range.start && d < range.end
-      })
-      .reduce((sum, t) => sum + Number(t.amount), 0)
-    return { label: range.label, value: total }
+  // Monthly chart data (income + expense)
+  const monthlyData = monthRanges.map((range) => {
+    let income = 0
+    let expense = 0
+    for (const t of last6MonthsTransactions) {
+      const d = new Date(t.date)
+      if (d >= range.start && d < range.end) {
+        if (t.type === 'income') income += Number(t.amount)
+        else expense += Number(t.amount)
+      }
+    }
+    return { label: range.label, income, expense }
   })
 
   return {
@@ -173,7 +178,7 @@ async function getDashboardData(userId: string) {
           : 0,
     })),
     budgetAlerts,
-    monthlyExpenses,
+    monthlyData,
     groupId: groupIds[0],
   }
 }
@@ -227,17 +232,44 @@ export default async function DashboardPage() {
     },
   ]
 
-  const maxExpense = Math.max(...data.monthlyExpenses.map((m) => m.value), 1)
+  const maxChart = Math.max(
+    ...data.monthlyData.map((m) => Math.max(m.income, m.expense)),
+    1,
+  )
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-xl font-bold text-foreground md:text-2xl">
-          Olá, {session.user.name?.split(' ')[0] ?? 'usuário'}!
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Veja o resumo das suas finanças
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground md:text-2xl">
+            Olá, {session.user.name?.split(' ')[0] ?? 'usuário'}!
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Veja o resumo das suas finanças
+          </p>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" asChild>
+          <Link href="/transactions/new">
+            <Plus className="mr-1.5 size-4" />
+            Nova transação
+          </Link>
+        </Button>
+        <Button size="sm" variant="outline" asChild>
+          <Link href="/goals">
+            <Target className="mr-1.5 size-4" />
+            Nova meta
+          </Link>
+        </Button>
+        <Button size="sm" variant="outline" asChild>
+          <Link href="/settings">
+            <UserPlus className="mr-1.5 size-4" />
+            Convidar membro
+          </Link>
+        </Button>
       </div>
 
       {/* Summary cards */}
@@ -289,12 +321,20 @@ export default async function DashboardPage() {
                 {data.budgetAlerts.map((alert) => (
                   <div
                     key={alert.name}
-                    className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2"
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+                      alert.percent >= 100
+                        ? 'border-red-500/20 bg-red-500/5'
+                        : 'border-yellow-500/20 bg-yellow-500/5'
+                    }`}
                   >
                     <span className="text-sm font-medium text-foreground">
                       {alert.name}
                     </span>
-                    <span className="text-xs font-medium text-destructive md:text-sm">
+                    <span
+                      className={`text-xs font-medium md:text-sm ${
+                        alert.percent >= 100 ? 'text-red-500' : 'text-yellow-500'
+                      }`}
+                    >
                       {formatMoney(alert.spent)} / {formatMoney(alert.limit)}{' '}
                       ({alert.percent}%)
                     </span>
@@ -305,33 +345,47 @@ export default async function DashboardPage() {
           )}
 
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Expenses chart */}
+            {/* Income vs Expense chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Despesas (últimos 6 meses)</CardTitle>
+                <CardTitle className="text-base">Receita vs Despesa (6 meses)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex h-40 items-end gap-2">
-                  {data.monthlyExpenses.map((m) => (
+                  {data.monthlyData.map((m) => (
                     <div
                       key={m.label}
                       className="flex flex-1 flex-col items-center gap-1"
                     >
-                      <span className="text-[10px] text-muted-foreground">
-                        {m.value > 0 ? formatMoney(m.value) : ''}
-                      </span>
-                      <div
-                        className="w-full rounded-t-sm bg-primary transition-all"
-                        style={{
-                          height: `${Math.max((m.value / maxExpense) * 100, 2)}%`,
-                          minHeight: m.value > 0 ? '4px' : '2px',
-                        }}
-                      />
+                      <div className="flex w-full items-end justify-center gap-0.5">
+                        <div
+                          className="w-[45%] rounded-t-sm bg-green-500 transition-all"
+                          style={{
+                            height: `${Math.max((m.income / maxChart) * 120, m.income > 0 ? 4 : 2)}px`,
+                          }}
+                        />
+                        <div
+                          className="w-[45%] rounded-t-sm bg-red-500 transition-all"
+                          style={{
+                            height: `${Math.max((m.expense / maxChart) * 120, m.expense > 0 ? 4 : 2)}px`,
+                          }}
+                        />
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         {m.label}
                       </span>
                     </div>
                   ))}
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="size-2.5 rounded-sm bg-green-500" />
+                    Receita
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="size-2.5 rounded-sm bg-red-500" />
+                    Despesa
+                  </div>
                 </div>
               </CardContent>
             </Card>
