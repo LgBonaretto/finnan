@@ -139,6 +139,7 @@ model Group {
   budgets       Budget[]
   goals         Goal[]
   allowances    Allowance[]
+  missions      Mission[]
   auditLogs     AuditLog[]
   invites       GroupInvite[]
   activityLogs  ActivityLog[]
@@ -317,6 +318,42 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("password_reset_tokens")
+}
+
+// ─── MISSIONS ───────────────────────────────────────────────────────────
+
+enum MissionType {
+  SPEND_LESS
+  SAVE_AMOUNT
+  NO_SPEND_CATEGORY
+}
+
+enum MissionStatus {
+  active
+  completed
+  failed
+}
+
+model Mission {
+  id            String        @id @default(cuid())
+  groupId       String        @map("group_id")
+  title         String
+  description   String?
+  type          MissionType
+  targetAmount  Decimal?      @db.Decimal(15, 2) @map("target_amount")
+  currentAmount Decimal       @db.Decimal(15, 2) @default(0) @map("current_amount")
+  categoryId    String?       @map("category_id")
+  startDate     DateTime      @db.Date @map("start_date")
+  endDate       DateTime      @db.Date @map("end_date")
+  status        MissionStatus @default(active)
+  reward        Int           @default(0)
+  createdBy     String        @map("created_by")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, status])
+  @@map("missions")
 }
 
 // ─── ACTIVITY LOG ───────────────────────────────────────────────────────
