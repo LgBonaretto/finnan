@@ -24,14 +24,18 @@ export async function awardPoints(params: {
   amount: number
   reason: string
 }) {
-  await prisma.point.create({
-    data: {
-      userId: params.userId,
-      groupId: params.groupId,
-      amount: params.amount,
-      reason: params.reason,
-    },
-  })
+  try {
+    await prisma.point.create({
+      data: {
+        userId: params.userId,
+        groupId: params.groupId,
+        amount: params.amount,
+        reason: params.reason,
+      },
+    })
+  } catch {
+    // Table may not exist yet
+  }
 }
 
 export type LeaderboardEntry = {
@@ -54,35 +58,39 @@ export async function getLeaderboard(
   const user = await requireUser()
   await requireMembership(user.id, groupId)
 
-  const grouped = await prisma.point.groupBy({
-    by: ['userId'],
-    where: { groupId },
-    _sum: { amount: true },
-  })
-
-  if (grouped.length === 0) return []
-
-  const userIds = grouped.map((g) => g.userId)
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
-    select: { id: true, name: true },
-  })
-
-  const userMap = new Map(users.map((u) => [u.id, u.name]))
-
-  return grouped
-    .map((g) => {
-      const total = g._sum.amount ?? 0
-      const { level, color } = getLevel(total)
-      return {
-        userId: g.userId,
-        userName: userMap.get(g.userId) ?? null,
-        totalPoints: total,
-        level,
-        levelColor: color,
-      }
+  try {
+    const grouped = await prisma.point.groupBy({
+      by: ['userId'],
+      where: { groupId },
+      _sum: { amount: true },
     })
-    .sort((a, b) => b.totalPoints - a.totalPoints)
+
+    if (grouped.length === 0) return []
+
+    const userIds = grouped.map((g) => g.userId)
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true },
+    })
+
+    const userMap = new Map(users.map((u) => [u.id, u.name]))
+
+    return grouped
+      .map((g) => {
+        const total = g._sum.amount ?? 0
+        const { level, color } = getLevel(total)
+        return {
+          userId: g.userId,
+          userName: userMap.get(g.userId) ?? null,
+          totalPoints: total,
+          level,
+          levelColor: color,
+        }
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+  } catch {
+    return []
+  }
 }
 
 export type PointHistory = {
@@ -98,30 +106,34 @@ export async function getMyPoints(
   const user = await requireUser()
   await requireMembership(user.id, groupId)
 
-  const [sumResult, history] = await Promise.all([
-    prisma.point.aggregate({
-      where: { groupId, userId: user.id },
-      _sum: { amount: true },
-    }),
-    prisma.point.findMany({
-      where: { groupId, userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    }),
-  ])
+  try {
+    const [sumResult, history] = await Promise.all([
+      prisma.point.aggregate({
+        where: { groupId, userId: user.id },
+        _sum: { amount: true },
+      }),
+      prisma.point.findMany({
+        where: { groupId, userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+    ])
 
-  const total = sumResult._sum.amount ?? 0
-  const { level, color } = getLevel(total)
+    const total = sumResult._sum.amount ?? 0
+    const { level, color } = getLevel(total)
 
-  return {
-    total,
-    level,
-    levelColor: color,
-    history: history.map((p) => ({
-      id: p.id,
-      amount: p.amount,
-      reason: p.reason,
-      createdAt: p.createdAt,
-    })),
+    return {
+      total,
+      level,
+      levelColor: color,
+      history: history.map((p) => ({
+        id: p.id,
+        amount: p.amount,
+        reason: p.reason,
+        createdAt: p.createdAt,
+      })),
+    }
+  } catch {
+    return { total: 0, history: [], level: 'Iniciante', levelColor: 'text-muted-foreground' }
   }
 }

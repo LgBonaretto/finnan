@@ -25,29 +25,33 @@ export async function getMissions(groupId: string) {
   const user = await requireUser()
   await requireMembership(user.id, groupId)
 
-  const missions = await prisma.mission.findMany({
-    where: { groupId },
-    orderBy: [{ status: 'asc' }, { endDate: 'asc' }],
-  })
+  try {
+    const missions = await prisma.mission.findMany({
+      where: { groupId },
+      orderBy: [{ status: 'asc' }, { endDate: 'asc' }],
+    })
 
-  return missions.map((m) => ({
-    id: m.id,
-    title: m.title,
-    description: m.description,
-    type: m.type as string,
-    targetAmount: m.targetAmount ? Number(m.targetAmount) : null,
-    currentAmount: Number(m.currentAmount),
-    categoryId: m.categoryId,
-    startDate: m.startDate,
-    endDate: m.endDate,
-    status: m.status as string,
-    reward: m.reward,
-    createdBy: m.createdBy,
-    percent:
-      m.targetAmount && Number(m.targetAmount) > 0
-        ? Math.round((Number(m.currentAmount) / Number(m.targetAmount)) * 100)
-        : 0,
-  }))
+    return missions.map((m) => ({
+      id: m.id,
+      title: m.title,
+      description: m.description,
+      type: m.type as string,
+      targetAmount: m.targetAmount ? Number(m.targetAmount) : null,
+      currentAmount: Number(m.currentAmount),
+      categoryId: m.categoryId,
+      startDate: m.startDate,
+      endDate: m.endDate,
+      status: m.status as string,
+      reward: m.reward,
+      createdBy: m.createdBy,
+      percent:
+        m.targetAmount && Number(m.targetAmount) > 0
+          ? Math.round((Number(m.currentAmount) / Number(m.targetAmount)) * 100)
+          : 0,
+    }))
+  } catch {
+    return []
+  }
 }
 
 export async function createMission(data: {

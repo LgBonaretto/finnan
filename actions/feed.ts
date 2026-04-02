@@ -39,31 +39,35 @@ export async function getFeed(params: {
 
   const limit = params.limit ?? 20
 
-  const logs = await prisma.activityLog.findMany({
-    where: { groupId: params.groupId },
-    include: {
-      user: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
-  })
+  try {
+    const logs = await prisma.activityLog.findMany({
+      where: { groupId: params.groupId },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
+    })
 
-  const hasMore = logs.length > limit
-  if (hasMore) logs.pop()
+    const hasMore = logs.length > limit
+    if (hasMore) logs.pop()
 
-  const nextCursor = hasMore ? logs[logs.length - 1]?.id : null
+    const nextCursor = hasMore ? logs[logs.length - 1]?.id : null
 
-  const items: FeedItem[] = logs.map((log) => ({
-    id: log.id,
-    userId: log.user.id,
-    userName: log.user.name,
-    action: log.action,
-    description: log.description,
-    amount: log.amount ? Number(log.amount) : null,
-    entityType: log.entityType,
-    createdAt: log.createdAt,
-  }))
+    const items: FeedItem[] = logs.map((log) => ({
+      id: log.id,
+      userId: log.user.id,
+      userName: log.user.name,
+      action: log.action,
+      description: log.description,
+      amount: log.amount ? Number(log.amount) : null,
+      entityType: log.entityType,
+      createdAt: log.createdAt,
+    }))
 
-  return { items, nextCursor }
+    return { items, nextCursor }
+  } catch {
+    return { items: [], nextCursor: null }
+  }
 }

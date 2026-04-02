@@ -10,15 +10,19 @@ export async function logActivity(params: {
   entityType?: string
   entityId?: string
 }) {
-  await prisma.activityLog.create({
-    data: {
-      groupId: params.groupId,
-      userId: params.userId,
-      action: params.action,
-      description: params.description ?? null,
-      amount: params.amount ? new Prisma.Decimal(String(params.amount)) : null,
-      entityType: params.entityType ?? null,
-      entityId: params.entityId ?? null,
-    },
-  })
+  try {
+    await prisma.activityLog.create({
+      data: {
+        groupId: params.groupId,
+        userId: params.userId,
+        action: params.action,
+        description: params.description ?? null,
+        amount: params.amount ? new Prisma.Decimal(String(params.amount)) : null,
+        entityType: params.entityType ?? null,
+        entityId: params.entityId ?? null,
+      },
+    })
+  } catch {
+    // Table may not exist yet - silently skip
+  }
 }
