@@ -25,6 +25,32 @@ async function requireMembership(userId: string, groupId: string) {
 
 // ── Create ───────────────────────────────────────────────────────────────────
 
+type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
+type RecurrenceData = {
+  frequency: RecurrenceFrequency
+  nextDate: string
+}
+
+function computeNextDate(date: string, frequency: RecurrenceFrequency): string {
+  const d = new Date(date)
+  switch (frequency) {
+    case 'daily':
+      d.setDate(d.getDate() + 1)
+      break
+    case 'weekly':
+      d.setDate(d.getDate() + 7)
+      break
+    case 'monthly':
+      d.setMonth(d.getMonth() + 1)
+      break
+    case 'yearly':
+      d.setFullYear(d.getFullYear() + 1)
+      break
+  }
+  return d.toISOString().split('T')[0]
+}
+
 export async function createTransaction(data: {
   groupId: string
   type: 'income' | 'expense'
@@ -32,12 +58,18 @@ export async function createTransaction(data: {
   description?: string
   categoryId?: string
   date: string
+  recurrence?: RecurrenceFrequency
 }) {
   const user = await requireUser()
   await requireMembership(user.id, data.groupId)
 
   const limit = await checkPlanLimit(data.groupId, 'transactionsPerMonth')
   if (!limit.allowed) return { error: limit.message }
+
+  const isRecurring = !!data.recurrence
+  const recurrence: RecurrenceData | null = data.recurrence
+    ? { frequency: data.recurrence, nextDate: computeNextDate(data.date, data.recurrence) }
+    : null
 
   const transaction = await prisma.transaction.create({
     data: {
@@ -48,6 +80,8 @@ export async function createTransaction(data: {
       description: data.description || null,
       categoryId: data.categoryId || null,
       date: new Date(data.date),
+      isRecurring,
+      recurrence: recurrence ?? undefined,
     },
   })
 

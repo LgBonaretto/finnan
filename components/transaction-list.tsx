@@ -23,6 +23,7 @@ import {
   BarChart3,
   Banknote,
   Tag,
+  Repeat,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,8 +48,29 @@ type Transaction = {
   amount: unknown
   description: string | null
   date: Date | string
+  isRecurring: boolean
+  recurrence: unknown
   category: { id: string; name: string; color: string | null } | null
   user: { id: string; name: string | null }
+}
+
+function getRecurrenceFrequency(recurrence: unknown): string | null {
+  if (
+    recurrence &&
+    typeof recurrence === 'object' &&
+    'frequency' in recurrence &&
+    typeof (recurrence as { frequency: unknown }).frequency === 'string'
+  ) {
+    return (recurrence as { frequency: string }).frequency
+  }
+  return null
+}
+
+const RECURRENCE_LABELS: Record<string, string> = {
+  daily: 'Diário',
+  weekly: 'Semanal',
+  monthly: 'Mensal',
+  yearly: 'Anual',
 }
 
 type Category = {
@@ -344,6 +366,15 @@ export function TransactionList({
                             {t.category.name}
                           </Badge>
                         )}
+                        {t.isRecurring && (() => {
+                          const freq = getRecurrenceFrequency(t.recurrence)
+                          return (
+                            <Badge variant="outline" className="gap-1 text-[10px]">
+                              <Repeat className="size-2.5" />
+                              {(freq && RECURRENCE_LABELS[freq]) ?? 'Recorrente'}
+                            </Badge>
+                          )
+                        })()}
                         <span className="hidden text-xs text-muted-foreground sm:inline">
                           {t.user.name}
                         </span>

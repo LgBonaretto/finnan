@@ -32,6 +32,7 @@ const transactionSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string().optional(),
   date: z.string().min(1, 'Informe a data'),
+  recurrence: z.enum(['none', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
 })
 
 type TransactionValues = z.infer<typeof transactionSchema>
@@ -123,6 +124,7 @@ export function NewTransactionForm({ groupId, categories }: Props) {
     }
 
     try {
+      const recurrence = data.recurrence && data.recurrence !== 'none' ? data.recurrence : undefined
       await createTransaction({
         groupId,
         type: data.type,
@@ -130,6 +132,7 @@ export function NewTransactionForm({ groupId, categories }: Props) {
         description: data.description,
         categoryId: data.categoryId,
         date: data.date,
+        recurrence,
       })
       router.push('/transactions')
     } catch (err) {
@@ -253,6 +256,27 @@ export function NewTransactionForm({ groupId, categories }: Props) {
             {errors.date && (
               <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="recurrence">Recorrência</Label>
+            <Select
+              value={watch('recurrence') ?? 'none'}
+              onValueChange={(v) =>
+                setValue('recurrence', v as 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly')
+              }
+            >
+              <SelectTrigger id="recurrence">
+                <SelectValue placeholder="Sem recorrência" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nunca</SelectItem>
+                <SelectItem value="daily">Diário</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="monthly">Mensal</SelectItem>
+                <SelectItem value="yearly">Anual</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
 
