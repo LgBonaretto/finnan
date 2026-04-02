@@ -25,11 +25,18 @@ export default async function AppLayout({
     redirect('/onboarding')
   }
 
+  // Get user role for sidebar visibility
+  const membership = await prisma.groupMember.findFirst({
+    where: { userId: session.user.id },
+    select: { role: true },
+    orderBy: { joinedAt: 'asc' },
+  })
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
-        <AppSidebar />
+        <AppSidebar userRole={membership?.role ?? null} />
       </aside>
 
       <div className="flex flex-1 flex-col">

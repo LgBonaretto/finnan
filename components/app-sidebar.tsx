@@ -15,16 +15,27 @@ import {
   Activity,
   BarChart3,
   Calculator,
+  FileUser,
+  Swords,
 } from 'lucide-react'
 import { FinnanLogo } from '@/components/finnan-logo'
 
-const navItems = [
+type NavItem = {
+  label: string
+  href: string
+  icon: typeof LayoutDashboard
+  adminOnly?: boolean
+}
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Transações', href: '/transactions', icon: ArrowLeftRight },
   { label: 'Orçamentos', href: '/budgets', icon: Wallet },
   { label: 'Metas', href: '/goals', icon: Target },
   { label: 'Relatórios', href: '/reports', icon: BarChart3 },
+  { label: 'Relatório Família', href: '/family-report', icon: FileUser, adminOnly: true },
   { label: 'Atividades', href: '/feed', icon: Activity },
+  { label: 'Missões', href: '/missions', icon: Swords },
   { label: 'Calculadoras', href: '/calculators', icon: Calculator },
   { label: 'Mesadas', href: '/allowances', icon: PiggyBank },
   { label: 'Grupos', href: '/groups', icon: Users },
@@ -32,8 +43,16 @@ const navItems = [
   { label: 'Configurações', href: '/settings', icon: Settings },
 ]
 
-export function AppSidebar({ className }: { className?: string }) {
+interface Props {
+  className?: string
+  userRole?: string | null
+}
+
+export function AppSidebar({ className, userRole }: Props) {
   const pathname = usePathname()
+  const isAdmin = userRole === 'owner' || userRole === 'admin'
+
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
@@ -44,7 +63,7 @@ export function AppSidebar({ className }: { className?: string }) {
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             item.href === '/settings'
               ? pathname === '/settings'
