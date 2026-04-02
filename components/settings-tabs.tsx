@@ -6,6 +6,14 @@ import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { updateProfile, updateGroup } from '@/actions/auth'
 import { inviteMember, removeMember, updateMemberRole } from '@/actions/members'
+import {
+  User,
+  Mail,
+  Shield,
+  LogOut,
+  Trash2,
+  CreditCard,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,6 +64,17 @@ const roleLabels: Record<string, string> = {
   child: 'Dependente',
 }
 
+const AVATAR_COLORS = [
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-orange-500',
+  'bg-pink-500',
+  'bg-cyan-500',
+  'bg-red-500',
+  'bg-yellow-500',
+]
+
 function getInitials(name?: string | null) {
   if (!name) return '?'
   return name
@@ -64,6 +83,15 @@ function getInitials(name?: string | null) {
     .slice(0, 2)
     .join('')
     .toUpperCase()
+}
+
+function getAvatarColor(name?: string | null): string {
+  if (!name) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
 export function SettingsTabs({ user, group, members, userRole }: Props) {
@@ -144,8 +172,10 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl font-bold text-foreground md:text-2xl">
+          Configurações
+        </h1>
+        <p className="text-sm text-muted-foreground">
           Gerencie seu perfil e grupo
         </p>
       </div>
@@ -154,15 +184,44 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="group">Grupo</TabsTrigger>
+          <TabsTrigger value="preferences">Preferências</TabsTrigger>
           <TabsTrigger value="account">Conta</TabsTrigger>
         </TabsList>
 
         {/* ── Profile ── */}
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="space-y-6">
+          {/* Avatar card */}
+          <Card>
+            <CardContent className="flex items-center gap-5 py-6">
+              <Avatar className="size-20">
+                <AvatarFallback
+                  className={`text-2xl font-bold text-white ${getAvatarColor(user.name)}`}
+                >
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {user.name || 'Sem nome'}
+                </h2>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+                {userRole && (
+                  <Badge variant="secondary" className="mt-1">
+                    {roleLabels[userRole] ?? userRole}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Edit profile */}
           <Card>
             <CardHeader>
-              <CardTitle>Perfil</CardTitle>
-              <CardDescription>Atualize seus dados pessoais</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <User className="size-4" />
+                Dados pessoais
+              </CardTitle>
+              <CardDescription>Atualize seu nome de exibição</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -175,12 +234,15 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-email">Email</Label>
-                <Input
-                  id="profile-email"
-                  value={user.email}
-                  disabled
-                  className="bg-muted"
-                />
+                <div className="flex items-center gap-2">
+                  <Mail className="size-4 text-muted-foreground" />
+                  <Input
+                    id="profile-email"
+                    value={user.email}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   O email não pode ser alterado.
                 </p>
@@ -262,7 +324,9 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
                         className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
                       >
                         <Avatar className="size-9">
-                          <AvatarFallback className="bg-muted text-xs">
+                          <AvatarFallback
+                            className={`text-xs font-medium text-white ${getAvatarColor(m.name)}`}
+                          >
                             {getInitials(m.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -399,11 +463,105 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
           )}
         </TabsContent>
 
+        {/* ── Preferences ── */}
+        <TabsContent value="preferences" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Moeda e formato</CardTitle>
+              <CardDescription>
+                Configurações regionais do app
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Moeda</Label>
+                <Select defaultValue="BRL">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">Real (R$)</SelectItem>
+                    <SelectItem value="USD">Dólar (US$)</SelectItem>
+                    <SelectItem value="EUR">Euro (&euro;)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  A moeda é definida por grupo. Em breve.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Formato de data</Label>
+                <Select defaultValue="dd/mm/yyyy">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dd/mm/yyyy">DD/MM/AAAA</SelectItem>
+                    <SelectItem value="mm/dd/yyyy">MM/DD/AAAA</SelectItem>
+                    <SelectItem value="yyyy-mm-dd">AAAA-MM-DD</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Em breve.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Notificações</CardTitle>
+              <CardDescription>
+                Controle quais alertas você recebe
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Alertas de orçamento
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Notificar quando atingir 80% ou 100%
+                  </p>
+                </div>
+                <Badge variant="secondary">Em breve</Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Novas transações
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Notificar quando membros adicionarem transações
+                  </p>
+                </div>
+                <Badge variant="secondary">Em breve</Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Metas concluídas
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Notificar quando uma meta for atingida
+                  </p>
+                </div>
+                <Badge variant="secondary">Em breve</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* ── Account ── */}
         <TabsContent value="account" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Plano e assinatura</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="size-4" />
+                Plano e assinatura
+              </CardTitle>
               <CardDescription>
                 Gerencie o plano do seu grupo
               </CardDescription>
@@ -417,7 +575,30 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Sessão</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="size-4" />
+                Segurança
+              </CardTitle>
+              <CardDescription>
+                Gerencie acesso à sua conta
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button variant="outline" disabled>
+                Alterar senha
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Em breve.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LogOut className="size-4" />
+                Sessão
+              </CardTitle>
               <CardDescription>
                 Gerencie sua sessão atual
               </CardDescription>
@@ -434,7 +615,10 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
 
           <Card className="border-destructive/30">
             <CardHeader>
-              <CardTitle className="text-destructive">Zona de perigo</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="size-4" />
+                Zona de perigo
+              </CardTitle>
               <CardDescription>
                 Ações irreversíveis na sua conta
               </CardDescription>
