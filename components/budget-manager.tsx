@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { formatMoney, parseMoney } from '@/lib/money'
 import { setBudget, deleteBudget } from '@/actions/budgets'
 import { BudgetProgressBar } from '@/components/budget-progress-bar'
+import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -154,6 +156,44 @@ export function BudgetManager({
         </CardHeader>
       </Card>
 
+      {/* Budget alerts */}
+      {items.some((i) => i.limit > 0 && i.percent !== null && i.percent >= 80) && (
+        <Card className="border-destructive/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-4 text-destructive" />
+              <CardTitle className="text-base">Alertas de orçamento</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {items
+              .filter((i) => i.limit > 0 && i.percent !== null && i.percent >= 80)
+              .sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0))
+              .map((item) => (
+                <div
+                  key={item.categoryId}
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+                    (item.percent ?? 0) >= 100
+                      ? 'border-red-500/20 bg-red-500/5'
+                      : 'border-yellow-500/20 bg-yellow-500/5'
+                  }`}
+                >
+                  <span className="text-sm font-medium text-foreground">
+                    {item.categoryName}
+                  </span>
+                  <span
+                    className={`text-xs font-medium md:text-sm ${
+                      (item.percent ?? 0) >= 100 ? 'text-red-500' : 'text-yellow-500'
+                    }`}
+                  >
+                    {formatMoney(item.spent)} / {formatMoney(item.limit)} ({item.percent}%)
+                  </span>
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-3">
         {items.map((item) => (
           <Card key={item.categoryId} size="sm">
@@ -163,9 +203,29 @@ export function BudgetManager({
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  {item.categoryName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {item.categoryName}
+                  </p>
+                  {item.limit > 0 && item.percent !== null && item.percent >= 100 && (
+                    <Badge variant="outline" className="gap-1 border-red-500/30 bg-red-500/10 text-red-500 text-[10px]">
+                      <AlertTriangle className="size-2.5" />
+                      Estourado
+                    </Badge>
+                  )}
+                  {item.limit > 0 && item.percent !== null && item.percent >= 80 && item.percent < 100 && (
+                    <Badge variant="outline" className="gap-1 border-yellow-500/30 bg-yellow-500/10 text-yellow-500 text-[10px]">
+                      <AlertTriangle className="size-2.5" />
+                      Atenção
+                    </Badge>
+                  )}
+                  {item.limit > 0 && item.percent !== null && item.percent < 80 && (
+                    <Badge variant="outline" className="gap-1 border-green-500/30 bg-green-500/10 text-green-500 text-[10px]">
+                      <CheckCircle2 className="size-2.5" />
+                      OK
+                    </Badge>
+                  )}
+                </div>
 
                 {editingId === item.categoryId ? (
                   <div className="mt-1.5 flex items-center gap-2">
