@@ -115,6 +115,7 @@ model User {
   auditLogs     AuditLog[]
   goalsCreated  Goal[]
   activityLogs  ActivityLog[]
+  points        Point[]
 
   @@map("users")
 }
@@ -140,6 +141,7 @@ model Group {
   goals         Goal[]
   allowances    Allowance[]
   missions      Mission[]
+  points        Point[]
   auditLogs     AuditLog[]
   invites       GroupInvite[]
   activityLogs  ActivityLog[]
@@ -318,6 +320,24 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("password_reset_tokens")
+}
+
+// ─── POINTS ─────────────────────────────────────────────────────────────
+
+model Point {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  groupId   String   @map("group_id")
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, userId])
+  @@index([groupId, createdAt(sort: Desc)])
+  @@map("points")
 }
 
 // ─── MISSIONS ───────────────────────────────────────────────────────────

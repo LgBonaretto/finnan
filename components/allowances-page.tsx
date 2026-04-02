@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PiggyBank, Plus, Check, X, Clock, Send } from 'lucide-react'
+import { PiggyBank, Plus, Check, X, Clock, Send, Trophy, Star, Medal } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 
 import {
@@ -558,6 +558,143 @@ function ChildView({
 
 // ── Main Export ──────────────────────────────────────────────────────────────
 
+// ── Leaderboard ────────────────────────────────────────────────────────
+
+type LeaderboardEntry = {
+  userId: string
+  userName: string | null
+  totalPoints: number
+  level: string
+  levelColor: string
+}
+
+type PointHistoryItem = {
+  id: string
+  amount: number
+  reason: string
+  createdAt: Date | string
+}
+
+type MyPointsData = {
+  total: number
+  history: PointHistoryItem[]
+  level: string
+  levelColor: string
+} | null
+
+const LEVEL_ICONS: Record<string, typeof PiggyBank> = {
+  Iniciante: Star,
+  Poupador: Medal,
+  Expert: Trophy,
+}
+
+function Leaderboard({ entries }: { entries: LeaderboardEntry[] }) {
+  if (entries.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Trophy className="size-4 text-yellow-500" />
+          <CardTitle className="text-base">Placar de Pontos</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {entries.map((entry, index) => {
+            const LevelIcon = LEVEL_ICONS[entry.level] ?? Star
+            return (
+              <div
+                key={entry.userId}
+                className="flex items-center gap-3 rounded-lg border border-border p-3"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
+                  {index + 1}
+                </span>
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                    {getInitials(entry.userName ?? 'U')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {entry.userName ?? 'Usuário'}
+                  </p>
+                  <p className={`flex items-center gap-1 text-xs ${entry.levelColor}`}>
+                    <LevelIcon className="size-3" />
+                    {entry.level}
+                  </p>
+                </div>
+                <span className="text-sm font-bold text-foreground">
+                  {entry.totalPoints} pts
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PointsSection({ myPoints }: { myPoints: MyPointsData }) {
+  if (!myPoints) return null
+
+  const LevelIcon = LEVEL_ICONS[myPoints.level] ?? Star
+
+  return (
+    <>
+      <Card className="border-yellow-500/20 bg-yellow-500/5">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Meus pontos</p>
+              <p className="text-3xl font-bold text-foreground">
+                {myPoints.total} <span className="text-lg text-muted-foreground">pts</span>
+              </p>
+              <p className={`mt-1 flex items-center gap-1 text-sm font-medium ${myPoints.levelColor}`}>
+                <LevelIcon className="size-4" />
+                {myPoints.level}
+              </p>
+            </div>
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-yellow-500/10">
+              <Trophy className="size-8 text-yellow-500" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {myPoints.history.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Histórico de pontos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {myPoints.history.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm text-foreground">{p.reason}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {new Date(p.createdAt).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-green-600">
+                    +{p.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
+  )
+}
+
 export function AllowancesPage({
   role,
   groupId,
@@ -566,6 +703,8 @@ export function AllowancesPage({
   members,
   myAllowance,
   myRequests,
+  leaderboard,
+  myPoints,
 }: {
   role: string
   groupId: string
@@ -574,19 +713,30 @@ export function AllowancesPage({
   members: GroupMember[]
   myAllowance: MyAllowance
   myRequests: MyRequest[]
+  leaderboard: LeaderboardEntry[]
+  myPoints: MyPointsData
 }) {
   const isAdmin = role === 'owner' || role === 'admin'
 
   if (isAdmin) {
     return (
-      <AdminView
-        groupId={groupId}
-        allowances={allowances}
-        pendingRequests={pendingRequests}
-        members={members}
-      />
+      <div className="space-y-6">
+        <AdminView
+          groupId={groupId}
+          allowances={allowances}
+          pendingRequests={pendingRequests}
+          members={members}
+        />
+        <Leaderboard entries={leaderboard} />
+      </div>
     )
   }
 
-  return <ChildView myAllowance={myAllowance} myRequests={myRequests} />
+  return (
+    <div className="space-y-6">
+      <ChildView myAllowance={myAllowance} myRequests={myRequests} />
+      <PointsSection myPoints={myPoints} />
+      <Leaderboard entries={leaderboard} />
+    </div>
+  )
 }

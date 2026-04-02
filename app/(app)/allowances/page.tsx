@@ -8,6 +8,7 @@ import {
   getMyAllowance,
   getMyRequests,
 } from '@/actions/allowances'
+import { getLeaderboard, getMyPoints } from '@/actions/points'
 import { AllowancesPage } from '@/components/allowances-page'
 
 export default async function AllowancesRoute() {
@@ -24,16 +25,18 @@ export default async function AllowancesRoute() {
   const isAdmin = role === 'owner' || role === 'admin'
 
   // Load data based on role
-  const [allowances, pendingRequests, membersRaw, myAllowance] = await Promise.all([
-    isAdmin ? getAllowances(groupId) : Promise.resolve([]),
-    isAdmin ? getPendingRequests(groupId) : Promise.resolve([]),
-    isAdmin ? getMembers(groupId) : Promise.resolve([]),
-    !isAdmin ? getMyAllowance(groupId) : Promise.resolve(null),
-  ])
+  const [allowances, pendingRequests, membersRaw, myAllowance, leaderboard, myPoints] =
+    await Promise.all([
+      isAdmin ? getAllowances(groupId) : Promise.resolve([]),
+      isAdmin ? getPendingRequests(groupId) : Promise.resolve([]),
+      isAdmin ? getMembers(groupId) : Promise.resolve([]),
+      !isAdmin ? getMyAllowance(groupId) : Promise.resolve(null),
+      getLeaderboard(groupId),
+      !isAdmin ? getMyPoints(groupId) : Promise.resolve(null),
+    ])
 
-  const myRequests = !isAdmin && myAllowance
-    ? await getMyRequests(myAllowance.id)
-    : []
+  const myRequests =
+    !isAdmin && myAllowance ? await getMyRequests(myAllowance.id) : []
 
   const members = membersRaw.map((m) => ({
     userId: m.userId,
@@ -50,6 +53,8 @@ export default async function AllowancesRoute() {
       members={members}
       myAllowance={myAllowance}
       myRequests={myRequests}
+      leaderboard={leaderboard}
+      myPoints={myPoints}
     />
   )
 }
