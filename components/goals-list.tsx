@@ -455,7 +455,7 @@ export function GoalsList({ groupId, initialGoals }: Props) {
   const totalTarget = initialGoals.reduce((sum, g) => sum + g.targetAmount, 0)
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in-up space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

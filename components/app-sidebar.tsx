@@ -20,6 +20,12 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { FinnanLogo } from '@/components/finnan-logo'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 type NavItem = {
   label: string
@@ -70,30 +76,46 @@ export function AppSidebar({ className, userRole, isSuperAdmin }: Props) {
       </Link>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {visibleItems.map((item) => {
-          const isActive =
-            item.href === '/settings'
-              ? pathname === '/settings'
-              : pathname === item.href || pathname.startsWith(item.href + '/')
+      <TooltipProvider delayDuration={300}>
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+          {visibleItems.map((item) => {
+            const isActive =
+              item.href === '/settings'
+                ? pathname === '/settings'
+                : pathname === item.href || pathname.startsWith(item.href + '/')
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-              )}
-            >
-              <item.icon className="size-[18px] shrink-0" />
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
+                      isActive
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
+                    )}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                    )}
+                    <item.icon
+                      className={cn(
+                        'size-[18px] shrink-0 transition-transform duration-150 group-hover:scale-110',
+                        isActive && 'text-primary',
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="md:hidden">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
+        </nav>
+      </TooltipProvider>
 
       {/* Footer */}
       <div className="border-t border-sidebar-border px-5 py-3">
