@@ -108,12 +108,13 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  accounts     Account[]
-  sessions     Session[]
-  groupMembers GroupMember[]
-  transactions Transaction[]
-  auditLogs    AuditLog[]
-  goalsCreated Goal[]
+  accounts      Account[]
+  sessions      Session[]
+  groupMembers  GroupMember[]
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+  goalsCreated  Goal[]
+  activityLogs  ActivityLog[]
 
   @@map("users")
 }
@@ -132,14 +133,15 @@ model Group {
   timezone         String   @default("America/Sao_Paulo")
   createdAt        DateTime @default(now()) @map("created_at")
 
-  members      GroupMember[]
-  transactions Transaction[]
-  categories   Category[]
-  budgets      Budget[]
-  goals        Goal[]
-  allowances   Allowance[]
-  auditLogs    AuditLog[]
-  invites      GroupInvite[]
+  members       GroupMember[]
+  transactions  Transaction[]
+  categories    Category[]
+  budgets       Budget[]
+  goals         Goal[]
+  allowances    Allowance[]
+  auditLogs     AuditLog[]
+  invites       GroupInvite[]
+  activityLogs  ActivityLog[]
 
   @@map("groups")
 }
@@ -315,6 +317,26 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("password_reset_tokens")
+}
+
+// ─── ACTIVITY LOG ───────────────────────────────────────────────────────
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  groupId     String   @map("group_id")
+  userId      String   @map("user_id")
+  action      String
+  description String?
+  amount      Decimal? @db.Decimal(15, 2)
+  entityType  String?  @map("entity_type")
+  entityId    String?  @map("entity_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@map("activity_logs")
 }
 
 // ─── AUDIT ───────────────────────────────────────────────────────────────────

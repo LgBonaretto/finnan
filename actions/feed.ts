@@ -18,20 +18,14 @@ async function requireMembership(userId: string, groupId: string) {
   return member
 }
 
-type FeedItem = {
+export type FeedItem = {
   id: string
-  userId: string | null
+  userId: string
   userName: string | null
   action: string
-  entityType: string
-  entityId: string | null
-  after: {
-    type?: string
-    amount?: string | number
-    description?: string | null
-    name?: string | null
-    categoryName?: string | null
-  } | null
+  description: string | null
+  amount: number | null
+  entityType: string | null
   createdAt: Date | string
 }
 
@@ -45,7 +39,7 @@ export async function getFeed(params: {
 
   const limit = params.limit ?? 20
 
-  const logs = await prisma.auditLog.findMany({
+  const logs = await prisma.activityLog.findMany({
     where: { groupId: params.groupId },
     include: {
       user: { select: { id: true, name: true } },
@@ -60,28 +54,16 @@ export async function getFeed(params: {
 
   const nextCursor = hasMore ? logs[logs.length - 1]?.id : null
 
-  const items: FeedItem[] = logs.map((log) => {
-    const afterData = log.after as Record<string, unknown> | null
-
-    return {
-      id: log.id,
-      userId: log.user?.id ?? null,
-      userName: log.user?.name ?? null,
-      action: log.action,
-      entityType: log.entityType,
-      entityId: log.entityId,
-      after: afterData
-        ? {
-            type: afterData.type as string | undefined,
-            amount: afterData.amount as string | number | undefined,
-            description: afterData.description as string | null | undefined,
-            name: afterData.name as string | null | undefined,
-            categoryName: undefined,
-          }
-        : null,
-      createdAt: log.createdAt,
-    }
-  })
+  const items: FeedItem[] = logs.map((log) => ({
+    id: log.id,
+    userId: log.user.id,
+    userName: log.user.name,
+    action: log.action,
+    description: log.description,
+    amount: log.amount ? Number(log.amount) : null,
+    entityType: log.entityType,
+    createdAt: log.createdAt,
+  }))
 
   return { items, nextCursor }
 }

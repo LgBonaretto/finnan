@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit'
+import { logActivity } from '@/lib/activity'
 import { checkPlanLimit } from '@/lib/plan-limits'
 import { redirect } from 'next/navigation'
 import { Prisma } from '@/app/generated/prisma/client'
@@ -85,14 +86,25 @@ export async function createTransaction(data: {
     },
   })
 
-  await createAuditLog({
-    userId: user.id,
-    groupId: data.groupId,
-    action: 'create',
-    entityType: 'transaction',
-    entityId: transaction.id,
-    after: transaction,
-  })
+  await Promise.all([
+    createAuditLog({
+      userId: user.id,
+      groupId: data.groupId,
+      action: 'create',
+      entityType: 'transaction',
+      entityId: transaction.id,
+      after: transaction,
+    }),
+    logActivity({
+      groupId: data.groupId,
+      userId: user.id,
+      action: data.type === 'income' ? 'added_income' : 'added_expense',
+      description: data.description,
+      amount: data.amount,
+      entityType: 'transaction',
+      entityId: transaction.id,
+    }),
+  ])
 
   return { success: true, id: transaction.id }
 }

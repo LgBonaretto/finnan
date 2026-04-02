@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { checkPlanLimit } from '@/lib/plan-limits'
+import { logActivity } from '@/lib/activity'
 import { redirect } from 'next/navigation'
 import { Prisma } from '@/app/generated/prisma/client'
 
@@ -74,6 +75,16 @@ export async function createGoal(data: {
     },
   })
 
+  await logActivity({
+    groupId: data.groupId,
+    userId: user.id,
+    action: 'created_goal',
+    description: data.name,
+    amount: data.targetAmount,
+    entityType: 'goal',
+    entityId: goal.id,
+  })
+
   return { success: true, id: goal.id }
 }
 
@@ -108,6 +119,16 @@ export async function addContribution(
       },
     }),
   ])
+
+  await logActivity({
+    groupId: goal.groupId,
+    userId: user.id,
+    action: 'contributed_goal',
+    description: goal.name,
+    amount,
+    entityType: 'goal',
+    entityId: goalId,
+  })
 
   return { success: true }
 }

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import { formatMoney } from '@/lib/money'
 import { getFeed } from '@/actions/feed'
+import type { FeedItem } from '@/actions/feed'
 import {
   Plus,
   Pencil,
@@ -11,6 +12,7 @@ import {
   Banknote,
   ArrowLeftRight,
   Activity,
+  Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -21,23 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
-type FeedItem = {
-  id: string
-  userId: string | null
-  userName: string | null
-  action: string
-  entityType: string
-  entityId: string | null
-  after: {
-    type?: string
-    amount?: string | number
-    description?: string | null
-    name?: string | null
-    categoryName?: string | null
-  } | null
-  createdAt: Date | string
-}
 
 interface Props {
   groupId: string
@@ -55,38 +40,40 @@ function getInitials(name?: string | null) {
     .toUpperCase()
 }
 
-const ACTION_ICONS: Record<string, typeof Activity> = {
-  create: Plus,
-  update: Pencil,
-  delete: Trash2,
+const AVATAR_COLORS = [
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-orange-500',
+  'bg-pink-500',
+  'bg-cyan-500',
+]
+
+function getAvatarColor(name?: string | null): string {
+  if (!name) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-const ENTITY_ICONS: Record<string, typeof Activity> = {
-  transaction: ArrowLeftRight,
-  goal: Target,
-  contribution: Banknote,
+const ACTION_CONFIG: Record<string, { label: string; icon: typeof Activity }> = {
+  added_expense: { label: 'adicionou despesa', icon: ArrowLeftRight },
+  added_income: { label: 'adicionou receita', icon: Banknote },
+  created_goal: { label: 'criou meta', icon: Target },
+  contributed_goal: { label: 'contribuiu para meta', icon: Target },
+  set_budget: { label: 'definiu orçamento', icon: Wallet },
+  created_mission: { label: 'criou missão', icon: Target },
+  completed_mission: { label: 'completou missão', icon: Target },
 }
 
-function getActionLabel(action: string, entityType: string): string {
-  const entityLabels: Record<string, string> = {
-    transaction: 'transação',
-    goal: 'meta',
-    budget: 'orçamento',
-    contribution: 'contribuição',
-    group: 'grupo',
-    member: 'membro',
-  }
+function getActionLabel(action: string): string {
+  return ACTION_CONFIG[action]?.label ?? action
+}
 
-  const actionLabels: Record<string, string> = {
-    create: 'adicionou',
-    update: 'editou',
-    delete: 'removeu',
-  }
-
-  const a = actionLabels[action] ?? action
-  const e = entityLabels[entityType] ?? entityType
-
-  return `${a} ${e}`
+function getActionIcon(action: string) {
+  return ACTION_CONFIG[action]?.icon ?? Activity
 }
 
 function formatRelativeTime(date: Date | string): string {
@@ -108,16 +95,6 @@ function formatRelativeTime(date: Date | string): string {
   })
 }
 
-function getAmountDisplay(item: FeedItem): string | null {
-  if (!item.after?.amount) return null
-  const amount = Number(item.after.amount)
-  if (isNaN(amount) || amount === 0) return null
-
-  const isExpense = item.after.type === 'expense'
-  const prefix = isExpense ? '-' : '+'
-  return `${prefix}${formatMoney(amount)}`
-}
-
 export function ActivityFeed({
   groupId,
   initialItems,
@@ -126,6 +103,22 @@ export function ActivityFeed({
   const [items, setItems] = useState(initialItems)
   const [cursor, setCursor] = useState(initialCursor)
   const [isLoading, startTransition] = useTransition()
+
+  // Auto-refresh every 30s
+  const refresh = useCallback(async () => {
+    try {
+      const result = await getFeed({ groupId, limit: 20 })
+      setItems(result.items)
+      setCursor(result.nextCursor)
+    } catch {
+      // silently fail
+    }
+  }, [groupId])
+
+  useEffect(() => {
+    const interval = setInterval(refresh, 30000)
+    return () => clearInterval(interval)
+  }, [refresh])
 
   function loadMore() {
     if (!cursor) return
@@ -164,12 +157,8 @@ export function ActivityFeed({
           <CardContent className="p-0">
             <div className="divide-y divide-border">
               {items.map((item) => {
-                const ActionIcon =
-                  ACTION_ICONS[item.action] ?? Activity
-                const EntityIcon =
-                  ENTITY_ICONS[item.entityType] ?? ArrowLeftRight
-                const amountDisplay = getAmountDisplay(item)
-                const isExpense = item.after?.type === 'expense'
+                const IconComponent = getActionIcon(item.action)
+                const isExpense = item.action === 'added_expense'
 
                 return (
                   <div
@@ -177,7 +166,9 @@ export function ActivityFeed({
                     className="flex items-start gap-3 px-4 py-3 md:px-6"
                   >
                     <Avatar className="mt-0.5 size-9 shrink-0">
-                      <AvatarFallback className="bg-muted text-xs">
+                      <AvatarFallback
+                        className={`text-xs font-medium text-white ${getAvatarColor(item.userName)}`}
+                      >
                         {getInitials(item.userName)}
                       </AvatarFallback>
                     </Avatar>
@@ -188,34 +179,27 @@ export function ActivityFeed({
                           {item.userName ?? 'Usuário'}
                         </span>{' '}
                         <span className="text-muted-foreground">
-                          {getActionLabel(item.action, item.entityType)}
+                          {getActionLabel(item.action)}
                         </span>
-                        {item.after?.description && (
+                        {item.description && (
                           <>
                             {' '}
                             <span className="font-medium">
-                              &ldquo;{item.after.description}&rdquo;
-                            </span>
-                          </>
-                        )}
-                        {item.after?.name && (
-                          <>
-                            {' '}
-                            <span className="font-medium">
-                              &ldquo;{item.after.name}&rdquo;
+                              &ldquo;{item.description}&rdquo;
                             </span>
                           </>
                         )}
                       </p>
 
                       <div className="mt-0.5 flex items-center gap-2">
-                        {amountDisplay && (
+                        {item.amount !== null && item.amount > 0 && (
                           <span
                             className={`text-xs font-semibold ${
                               isExpense ? 'text-red-500' : 'text-green-600'
                             }`}
                           >
-                            {amountDisplay}
+                            {isExpense ? '-' : '+'}
+                            {formatMoney(item.amount)}
                           </span>
                         )}
                         <span className="text-xs text-muted-foreground">
@@ -225,7 +209,7 @@ export function ActivityFeed({
                     </div>
 
                     <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      <EntityIcon className="size-4" />
+                      <IconComponent className="size-4" />
                     </div>
                   </div>
                 )
