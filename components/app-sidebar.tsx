@@ -17,6 +17,7 @@ import {
   Calculator,
   FileUser,
   Swords,
+  ShieldAlert,
 } from 'lucide-react'
 import { FinnanLogo } from '@/components/finnan-logo'
 
@@ -25,6 +26,7 @@ type NavItem = {
   href: string
   icon: typeof LayoutDashboard
   adminOnly?: boolean
+  superAdminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -41,18 +43,24 @@ const navItems: NavItem[] = [
   { label: 'Grupos', href: '/groups', icon: Users },
   { label: 'Planos', href: '/settings/billing', icon: CreditCard },
   { label: 'Configurações', href: '/settings', icon: Settings },
+  { label: 'Admin', href: '/admin/users', icon: ShieldAlert, superAdminOnly: true },
 ]
 
 interface Props {
   className?: string
   userRole?: string | null
+  isSuperAdmin?: boolean
 }
 
-export function AppSidebar({ className, userRole }: Props) {
+export function AppSidebar({ className, userRole, isSuperAdmin }: Props) {
   const pathname = usePathname()
   const isAdmin = userRole === 'owner' || userRole === 'admin'
 
-  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin)
+  const visibleItems = navItems.filter((item) => {
+    if (item.superAdminOnly && !isSuperAdmin) return false
+    if (item.adminOnly && !isAdmin) return false
+    return true
+  })
 
   return (
     <div className={cn('flex h-full flex-col', className)}>

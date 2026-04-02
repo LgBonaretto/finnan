@@ -18,7 +18,7 @@ export default async function AppLayout({
   // Check onboarding from DB to avoid stale JWT issues
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { onboardingCompleted: true },
+    select: { onboardingCompleted: true, role: true },
   })
 
   if (!user?.onboardingCompleted) {
@@ -36,7 +36,7 @@ export default async function AppLayout({
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
-        <AppSidebar userRole={membership?.role ?? null} />
+        <AppSidebar userRole={membership?.role ?? null} isSuperAdmin={user?.role === 'SUPERADMIN'} />
       </aside>
 
       <div className="flex flex-1 flex-col">
