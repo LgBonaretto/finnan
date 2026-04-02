@@ -12,6 +12,9 @@ import {
   Users,
   CreditCard,
   Settings,
+  Activity,
+  BarChart3,
+  Calculator,
 } from 'lucide-react'
 import { FinnanLogo } from '@/components/finnan-logo'
 
@@ -20,6 +23,9 @@ const navItems = [
   { label: 'Transações', href: '/transactions', icon: ArrowLeftRight },
   { label: 'Orçamentos', href: '/budgets', icon: Wallet },
   { label: 'Metas', href: '/goals', icon: Target },
+  { label: 'Relatórios', href: '/reports', icon: BarChart3 },
+  { label: 'Atividades', href: '/feed', icon: Activity },
+  { label: 'Calculadoras', href: '/calculators', icon: Calculator },
   { label: 'Mesadas', href: '/allowances', icon: PiggyBank },
   { label: 'Grupos', href: '/groups', icon: Users },
   { label: 'Planos', href: '/settings/billing', icon: CreditCard },
