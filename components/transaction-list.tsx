@@ -5,7 +5,25 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { formatMoney } from '@/lib/money'
 import { getTransactions, deleteTransaction } from '@/actions/transactions'
-import { Plus, Trash2, ArrowLeftRight } from 'lucide-react'
+import {
+  Plus,
+  Trash2,
+  ArrowLeftRight,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Utensils,
+  Car,
+  Home,
+  Heart,
+  GraduationCap,
+  Gamepad2,
+  Shirt,
+  Briefcase,
+  BarChart3,
+  Banknote,
+  Tag,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -40,6 +58,12 @@ type Category = {
   color: string | null
 }
 
+type Balance = {
+  income: number
+  expense: number
+  balance: number
+}
+
 interface Props {
   groupId: string
   initialTransactions: Transaction[]
@@ -48,6 +72,26 @@ interface Props {
   currentMonth?: string
   currentType?: string
   currentCategoryId?: string
+  balance: Balance
+}
+
+const CATEGORY_ICONS: Record<string, typeof Tag> = {
+  'Alimentação': Utensils,
+  'Transporte': Car,
+  'Moradia': Home,
+  'Saúde': Heart,
+  'Educação': GraduationCap,
+  'Lazer': Gamepad2,
+  'Vestuário': Shirt,
+  'Salário': Briefcase,
+  'Freelance': Briefcase,
+  'Investimentos': BarChart3,
+  'Outros': Tag,
+}
+
+function getCategoryIcon(categoryName: string | undefined) {
+  if (!categoryName) return Tag
+  return CATEGORY_ICONS[categoryName] ?? Tag
 }
 
 function buildMonthOptions() {
@@ -72,6 +116,13 @@ function formatDate(date: Date | string) {
   })
 }
 
+function formatDateLong(date: Date | string) {
+  return new Date(date).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  })
+}
+
 export function TransactionList({
   groupId,
   initialTransactions,
@@ -80,6 +131,7 @@ export function TransactionList({
   currentMonth,
   currentType,
   currentCategoryId,
+  balance,
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -126,6 +178,7 @@ export function TransactionList({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground md:text-2xl">Transações</h1>
@@ -134,10 +187,57 @@ export function TransactionList({
           </p>
         </div>
         <Button asChild className="hidden sm:inline-flex">
-          <Link href="/transactions/new">Nova transação</Link>
+          <Link href="/transactions/new">
+            <Plus className="mr-2 size-4" />
+            Nova transação
+          </Link>
         </Button>
       </div>
 
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs">Receitas</CardDescription>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-green-600/10 text-green-600">
+                <TrendingUp className="size-4" />
+              </div>
+            </div>
+            <CardTitle className="text-base text-green-600 md:text-xl">
+              {formatMoney(balance.income)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs">Despesas</CardDescription>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
+                <TrendingDown className="size-4" />
+              </div>
+            </div>
+            <CardTitle className="text-base text-red-500 md:text-xl">
+              {formatMoney(balance.expense)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs">Saldo</CardDescription>
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Wallet className="size-4" />
+              </div>
+            </div>
+            <CardTitle className={`text-base md:text-xl ${balance.balance >= 0 ? 'text-foreground' : 'text-red-500'}`}>
+              {formatMoney(balance.balance)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {/* Filters */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
         <Select
           value={currentMonth ?? 'all'}
@@ -188,6 +288,7 @@ export function TransactionList({
         </Select>
       </div>
 
+      {/* Transaction list */}
       {transactions.length === 0 ? (
         <Card>
           <CardHeader className="text-center">
@@ -209,56 +310,69 @@ export function TransactionList({
         <Card>
           <CardContent className="p-0">
             <div className="divide-y divide-border">
-              {transactions.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-3 px-4 py-3 md:gap-4 md:px-6"
-                >
-                  <div className="hidden w-12 shrink-0 text-sm text-muted-foreground sm:block">
-                    {formatDate(t.date)}
-                  </div>
+              {transactions.map((t) => {
+                const IconComponent = getCategoryIcon(t.category?.name)
+                const isIncome = t.type === 'income'
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
+                return (
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 md:gap-4 md:px-6"
+                  >
+                    {/* Category icon */}
+                    <div
+                      className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
+                        isIncome
+                          ? 'bg-green-600/10 text-green-600'
+                          : 'bg-red-500/10 text-red-500'
+                      }`}
+                    >
+                      <IconComponent className="size-5" />
+                    </div>
+
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">
                         {t.description || 'Sem descrição'}
                       </p>
-                      <span className="shrink-0 text-xs text-muted-foreground sm:hidden">
-                        {formatDate(t.date)}
-                      </span>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDateLong(t.date)}
+                        </span>
+                        {t.category && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {t.category.name}
+                          </Badge>
+                        )}
+                        <span className="hidden text-xs text-muted-foreground sm:inline">
+                          {t.user.name}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      {t.category && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {t.category.name}
-                        </Badge>
-                      )}
-                      <span className="hidden text-xs text-muted-foreground sm:inline">
-                        {t.user.name}
-                      </span>
+
+                    {/* Amount */}
+                    <div
+                      className={`shrink-0 text-sm font-semibold ${
+                        isIncome ? 'text-green-600' : 'text-red-500'
+                      }`}
+                    >
+                      {isIncome ? '+' : '-'}{' '}
+                      {formatMoney(t.amount as number | string)}
                     </div>
-                  </div>
 
-                  <div
-                    className={`shrink-0 text-sm font-semibold ${
-                      t.type === 'income' ? 'text-green-600' : 'text-red-500'
-                    }`}
-                  >
-                    {t.type === 'income' ? '+' : '-'}{' '}
-                    {formatMoney(t.amount as number | string)}
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(t.id)}
+                      disabled={isDeleting === t.id}
+                      className="hidden shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 sm:block"
+                      title="Excluir"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(t.id)}
-                    disabled={isDeleting === t.id}
-                    className="hidden shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 sm:block"
-                    title="Excluir"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
 

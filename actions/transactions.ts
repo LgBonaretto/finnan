@@ -209,17 +209,24 @@ export async function deleteTransaction(id: string) {
 
 // ── Balance ──────────────────────────────────────────────────────────────────
 
-export async function getBalance(groupId: string) {
+export async function getBalance(groupId: string, month?: string) {
   const user = await requireUser()
   await requireMembership(user.id, groupId)
 
+  const dateFilter: Prisma.TransactionWhereInput = {}
+  if (month) {
+    const start = new Date(month + '-01')
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1)
+    dateFilter.date = { gte: start, lt: end }
+  }
+
   const [incomeResult, expenseResult] = await Promise.all([
     prisma.transaction.aggregate({
-      where: { groupId, type: 'income', deletedAt: null },
+      where: { groupId, type: 'income', deletedAt: null, ...dateFilter },
       _sum: { amount: true },
     }),
     prisma.transaction.aggregate({
-      where: { groupId, type: 'expense', deletedAt: null },
+      where: { groupId, type: 'expense', deletedAt: null, ...dateFilter },
       _sum: { amount: true },
     }),
   ])

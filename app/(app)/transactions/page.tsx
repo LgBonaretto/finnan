@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getGroups } from '@/actions/groups'
-import { getTransactions, getCategories } from '@/actions/transactions'
+import { getTransactions, getCategories, getBalance } from '@/actions/transactions'
 import { TransactionList } from '@/components/transaction-list'
 
 interface Props {
@@ -22,7 +22,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
   const groupId = groups[0].id
   const params = await searchParams
 
-  const [{ transactions, nextCursor }, categories] = await Promise.all([
+  const [{ transactions, nextCursor }, categories, balance] = await Promise.all([
     getTransactions({
       groupId,
       type: params.type as 'income' | 'expense' | undefined,
@@ -30,6 +30,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
       month: params.month,
     }),
     getCategories(groupId),
+    getBalance(groupId, params.month),
   ])
 
   return (
@@ -41,6 +42,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
       currentMonth={params.month}
       currentType={params.type}
       currentCategoryId={params.categoryId}
+      balance={balance}
     />
   )
 }
