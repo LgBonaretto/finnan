@@ -13,19 +13,27 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    // Return 200 even for invalid JSON so Pluggy registration succeeds
+    return NextResponse.json({ ok: true })
   }
 
   const { event, itemId } = body
 
-  if (event !== 'item/updated' && event !== 'transactions/updated') {
-    return NextResponse.json({ ok: true })
+  // Always respond 200 immediately — Pluggy requires this within 5s
+  // Process async in background for relevant events only
+  if (event === 'item/updated' || event === 'transactions/updated') {
+    if (itemId) {
+      // Fire and forget — don't await
+      processWebhook(itemId).catch((err) =>
+        console.error('Pluggy webhook background sync failed:', err),
+      )
+    }
   }
 
-  if (!itemId) {
-    return NextResponse.json({ error: 'Missing itemId' }, { status: 400 })
-  }
+  return NextResponse.json({ ok: true })
+}
 
+async function processWebhook(itemId: string) {
   const user = await prisma.user.findFirst({
     where: { pluggyItemIds: { has: itemId } },
     include: {
@@ -37,17 +45,8 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  if (!user || user.groupMembers.length === 0) {
-    return NextResponse.json({ error: 'User or group not found for itemId' }, { status: 404 })
-  }
+  if (!user || user.groupMembers.length === 0) return
 
   const groupId = user.groupMembers[0].groupId
-
-  try {
-    const result = await syncTransactions(itemId, groupId)
-    return NextResponse.json({ ok: true, synced: result.synced })
-  } catch (error) {
-    console.error('Pluggy webhook sync failed:', error)
-    return NextResponse.json({ error: 'Sync failed' }, { status: 500 })
-  }
+  await syncTransactions(itemId, groupId)
 }
