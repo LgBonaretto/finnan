@@ -17,9 +17,9 @@ export async function getPluggyApiKey(): Promise<string> {
   return result.accessToken
 }
 
-export async function getConnectToken(userId: string): Promise<string> {
+export async function getConnectToken(itemId?: string): Promise<string> {
   const client = createClient()
-  const result = await client.createConnectToken(userId)
+  const result = await client.createConnectToken(itemId ?? '')
   return result.accessToken
 }
 

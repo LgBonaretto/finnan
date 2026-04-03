@@ -9,7 +9,7 @@ export async function POST() {
   }
 
   try {
-    const accessToken = await getConnectToken(session.user.id)
+    const accessToken = await getConnectToken()
     return NextResponse.json({ accessToken })
   } catch (error) {
     console.error('Failed to create Pluggy connect token:', error)
