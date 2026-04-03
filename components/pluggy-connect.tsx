@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import Script from 'next/script'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { savePluggyItemId } from '@/actions/pluggy'
 import { Button } from '@/components/ui/button'
@@ -20,21 +19,44 @@ declare global {
   }
 }
 
+function loadPluggyScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window.PluggyConnect !== 'undefined') {
+      resolve()
+      return
+    }
+    const existing = document.querySelector('script[src*="pluggy-connect"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve())
+      existing.addEventListener('error', reject)
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js'
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
+
 export function PluggyConnectButton() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  useEffect(() => {
+    loadPluggyScript().catch(console.error)
+  }, [])
 
   const handleConnect = useCallback(async () => {
-    if (!window.PluggyConnect) return
     setLoading(true)
-
     try {
+      await loadPluggyScript()
       const res = await fetch('/api/pluggy/connect-token', { method: 'POST' })
       if (!res.ok) throw new Error('Failed to get connect token')
       const { accessToken } = await res.json()
 
-      const pluggy = window.PluggyConnect.init({
+      const pluggy = window.PluggyConnect!.init({
         connectToken: accessToken,
         onSuccess: async (data) => {
           try {
@@ -63,20 +85,9 @@ export function PluggyConnectButton() {
   }, [router])
 
   return (
-    <>
-      <Script
-        src="https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js"
-        onLoad={() => setScriptLoaded(true)}
-        strategy="afterInteractive"
-      />
-      <Button
-        onClick={handleConnect}
-        disabled={loading || !scriptLoaded}
-        variant="outline"
-      >
-        <Landmark className="mr-2 size-4" />
-        {loading ? 'Conectando...' : 'Conectar meu banco'}
-      </Button>
-    </>
+    <Button onClick={handleConnect} disabled={loading} variant="outline">
+      <Landmark className="mr-2 size-4" />
+      {loading ? 'Conectando...' : 'Conectar meu banco'}
+    </Button>
   )
 }
