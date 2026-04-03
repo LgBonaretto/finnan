@@ -49,7 +49,9 @@ type Transaction = {
   description: string | null
   date: Date | string
   isRecurring: boolean
+  recurringInterval: string | null
   recurrence: unknown
+  parentTransactionId: string | null
   category: { id: string; name: string; color: string | null } | null
   user: { id: string; name: string | null }
 }
@@ -367,7 +369,7 @@ export function TransactionList({
                           </Badge>
                         )}
                         {t.isRecurring && (() => {
-                          const freq = getRecurrenceFrequency(t.recurrence)
+                          const freq = t.recurringInterval ?? getRecurrenceFrequency(t.recurrence)
                           return (
                             <Badge variant="outline" className="gap-1 text-[10px]">
                               <Repeat className="size-2.5" />

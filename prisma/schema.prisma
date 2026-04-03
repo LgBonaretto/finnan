@@ -203,28 +203,35 @@ model Category {
 }
 
 model Transaction {
-  id          String          @id @default(cuid())
-  groupId     String          @map("group_id")
-  userId      String          @map("user_id")
-  categoryId  String?         @map("category_id")
-  type        TransactionType
-  amount      Decimal         @db.Decimal(15, 2)
-  description String?
-  date        DateTime        @db.Date
-  isRecurring Boolean         @default(false) @map("is_recurring")
-  recurrence  Json?
-  attachments String[]
-  tags        String[]
-  metadata    Json            @default("{}")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  deletedAt   DateTime?       @map("deleted_at")
+  id                   String          @id @default(cuid())
+  groupId              String          @map("group_id")
+  userId               String          @map("user_id")
+  categoryId           String?         @map("category_id")
+  type                 TransactionType
+  amount               Decimal         @db.Decimal(15, 2)
+  description          String?
+  date                 DateTime        @db.Date
+  isRecurring          Boolean         @default(false) @map("is_recurring")
+  recurringInterval    String?         @map("recurring_interval")
+  recurringDay         Int?            @map("recurring_day")
+  nextOccurrence       DateTime?       @map("next_occurrence")
+  parentTransactionId  String?         @map("parent_transaction_id")
+  recurrence           Json?
+  attachments          String[]
+  tags                 String[]
+  metadata             Json            @default("{}")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  deletedAt            DateTime?       @map("deleted_at")
 
-  group    Group     @relation(fields: [groupId], references: [id])
-  user     User      @relation(fields: [userId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
+  group             Group        @relation(fields: [groupId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  category          Category?    @relation(fields: [categoryId], references: [id])
+  parentTransaction Transaction? @relation("RecurringChildren", fields: [parentTransactionId], references: [id])
+  childTransactions Transaction[] @relation("RecurringChildren")
 
   @@index([groupId, date(sort: Desc)])
   @@index([groupId, createdAt(sort: Desc)])
+  @@index([nextOccurrence])
   @@map("transactions")
 }
 

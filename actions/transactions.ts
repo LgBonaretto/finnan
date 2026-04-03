@@ -60,6 +60,7 @@ export async function createTransaction(data: {
   categoryId?: string
   date: string
   recurrence?: RecurrenceFrequency
+  recurringDay?: number
 }) {
   const user = await requireUser()
   await requireMembership(user.id, data.groupId)
@@ -72,6 +73,10 @@ export async function createTransaction(data: {
     ? { frequency: data.recurrence, nextDate: computeNextDate(data.date, data.recurrence) }
     : null
 
+  const nextOccurrence = isRecurring
+    ? new Date(computeNextDate(data.date, data.recurrence!))
+    : null
+
   const transaction = await prisma.transaction.create({
     data: {
       groupId: data.groupId,
@@ -82,6 +87,9 @@ export async function createTransaction(data: {
       categoryId: data.categoryId || null,
       date: new Date(data.date),
       isRecurring,
+      recurringInterval: data.recurrence ?? null,
+      recurringDay: data.recurringDay ?? null,
+      nextOccurrence,
       recurrence: recurrence ?? undefined,
     },
   })

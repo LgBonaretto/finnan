@@ -32,7 +32,9 @@ const transactionSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string().optional(),
   date: z.string().min(1, 'Informe a data'),
+  isRecurring: z.boolean().optional(),
   recurrence: z.enum(['none', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
+  recurringDay: z.number().min(1).max(31).optional(),
 })
 
 type TransactionValues = z.infer<typeof transactionSchema>
@@ -72,6 +74,8 @@ export function NewTransactionForm({ groupId, categories }: Props) {
 
   const selectedType = watch('type')
   const selectedCategoryId = watch('categoryId')
+  const isRecurring = watch('isRecurring')
+  const selectedRecurrence = watch('recurrence')
   const filteredCategories = categories.filter((c) => c.type === selectedType)
 
   const handleDescriptionBlur = useCallback(async () => {
@@ -124,7 +128,9 @@ export function NewTransactionForm({ groupId, categories }: Props) {
     }
 
     try {
-      const recurrence = data.recurrence && data.recurrence !== 'none' ? data.recurrence : undefined
+      const recurrence = data.isRecurring && data.recurrence && data.recurrence !== 'none'
+        ? data.recurrence
+        : undefined
       await createTransaction({
         groupId,
         type: data.type,
@@ -133,6 +139,7 @@ export function NewTransactionForm({ groupId, categories }: Props) {
         categoryId: data.categoryId,
         date: data.date,
         recurrence,
+        recurringDay: recurrence === 'monthly' ? data.recurringDay : undefined,
       })
       router.push('/transactions')
     } catch (err) {
@@ -258,25 +265,73 @@ export function NewTransactionForm({ groupId, categories }: Props) {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="recurrence">Recorrência</Label>
-            <Select
-              value={watch('recurrence') ?? 'none'}
-              onValueChange={(v) =>
-                setValue('recurrence', v as 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly')
-              }
-            >
-              <SelectTrigger id="recurrence">
-                <SelectValue placeholder="Sem recorrência" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nunca</SelectItem>
-                <SelectItem value="daily">Diário</SelectItem>
-                <SelectItem value="weekly">Semanal</SelectItem>
-                <SelectItem value="monthly">Mensal</SelectItem>
-                <SelectItem value="yearly">Anual</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Recurring toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="isRecurring">Transação recorrente</Label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!!isRecurring}
+                onClick={() => {
+                  const next = !isRecurring
+                  setValue('isRecurring', next)
+                  if (!next) {
+                    setValue('recurrence', 'none')
+                    setValue('recurringDay', undefined)
+                  } else {
+                    setValue('recurrence', 'monthly')
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+                  isRecurring ? 'bg-primary' : 'bg-muted'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                    isRecurring ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {isRecurring && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="space-y-2">
+                  <Label htmlFor="recurrence">Intervalo</Label>
+                  <Select
+                    value={selectedRecurrence ?? 'monthly'}
+                    onValueChange={(v) =>
+                      setValue('recurrence', v as 'daily' | 'weekly' | 'monthly' | 'yearly')
+                    }
+                  >
+                    <SelectTrigger id="recurrence">
+                      <SelectValue placeholder="Selecione o intervalo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Diário</SelectItem>
+                      <SelectItem value="weekly">Semanal</SelectItem>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="yearly">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedRecurrence === 'monthly' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="recurringDay">Dia do mês</Label>
+                    <Input
+                      id="recurringDay"
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder="Ex: 10"
+                      {...register('recurringDay', { valueAsNumber: true })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
 
