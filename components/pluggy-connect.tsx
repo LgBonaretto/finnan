@@ -35,7 +35,9 @@ export function PluggyConnectButton() {
       {connectToken && (
         <PluggyConnect
           connectToken={connectToken}
+          includeSandbox={true}
           onSuccess={async (data) => {
+            console.log('Pluggy onSuccess:', JSON.stringify(data))
             try {
               await savePluggyItemId(data.item.id)
               router.refresh()
@@ -47,13 +49,17 @@ export function PluggyConnectButton() {
             }
           }}
           onError={(error) => {
-            console.error('Pluggy Connect error:', error)
+            console.error('Pluggy onError:', JSON.stringify(error))
             setConnectToken(null)
             setLoading(false)
           }}
           onClose={() => {
+            console.log('Pluggy onClose')
             setConnectToken(null)
             setLoading(false)
+          }}
+          onEvent={(payload) => {
+            console.log('Pluggy onEvent:', JSON.stringify(payload))
           }}
         />
       )}
