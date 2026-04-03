@@ -67,7 +67,7 @@ export function PluggyConnectButton() {
       <Script
         src="https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js"
         onLoad={() => setScriptLoaded(true)}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
       <Button
         onClick={handleConnect}
