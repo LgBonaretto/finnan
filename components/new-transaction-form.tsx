@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod/v4'
 import { useRouter } from 'next/navigation'
 import { createTransaction } from '@/actions/transactions'
+import { getCreditCards, createInstallmentTransaction } from '@/actions/credit-cards'
 import { parseMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,11 +52,23 @@ interface Props {
   categories: Category[]
 }
 
+type CreditCardItem = { id: string; name: string; lastDigits: string | null }
+
 export function NewTransactionForm({ groupId, categories }: Props) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [aiSuggested, setAiSuggested] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [isInstallment, setIsInstallment] = useState(false)
+  const [creditCards, setCreditCards] = useState<CreditCardItem[]>([])
+  const [selectedCardId, setSelectedCardId] = useState('')
+  const [installments, setInstallments] = useState('3')
+
+  useEffect(() => {
+    getCreditCards().then((cards) => {
+      setCreditCards(cards.map((c) => ({ id: c.id, name: c.name, lastDigits: c.lastDigits })))
+    }).catch(() => {})
+  }, [])
 
   const {
     register,
@@ -128,19 +141,30 @@ export function NewTransactionForm({ groupId, categories }: Props) {
     }
 
     try {
-      const recurrence = data.isRecurring && data.recurrence && data.recurrence !== 'none'
-        ? data.recurrence
-        : undefined
-      await createTransaction({
-        groupId,
-        type: data.type,
-        amount: parsedAmount,
-        description: data.description,
-        categoryId: data.categoryId,
-        date: data.date,
-        recurrence,
-        recurringDay: recurrence === 'monthly' ? data.recurringDay : undefined,
-      })
+      if (isInstallment && selectedCardId && Number(installments) >= 2) {
+        await createInstallmentTransaction({
+          creditCardId: selectedCardId,
+          description: data.description || 'Compra parcelada',
+          totalAmount: Number(parsedAmount),
+          installments: Number(installments),
+          firstDate: data.date,
+          categoryId: data.categoryId,
+        })
+      } else {
+        const recurrence = data.isRecurring && data.recurrence && data.recurrence !== 'none'
+          ? data.recurrence
+          : undefined
+        await createTransaction({
+          groupId,
+          type: data.type,
+          amount: parsedAmount,
+          description: data.description,
+          categoryId: data.categoryId,
+          date: data.date,
+          recurrence,
+          recurringDay: recurrence === 'monthly' ? data.recurringDay : undefined,
+        })
+      }
       router.push('/transactions')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar transação.')
@@ -264,6 +288,71 @@ export function NewTransactionForm({ groupId, categories }: Props) {
               <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
           </div>
+
+          {/* Installment toggle */}
+          {selectedType === 'expense' && creditCards.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Compra parcelada no cartão</Label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isInstallment}
+                  onClick={() => {
+                    setIsInstallment(!isInstallment)
+                    if (isInstallment) {
+                      setSelectedCardId('')
+                      setInstallments('3')
+                    } else {
+                      setSelectedCardId(creditCards[0]?.id ?? '')
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+                    isInstallment ? 'bg-primary' : 'bg-muted'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                      isInstallment ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {isInstallment && (
+                <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="space-y-2">
+                    <Label>Cartão</Label>
+                    <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o cartão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {creditCards.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} {c.lastDigits ? `•••• ${c.lastDigits}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Parcelas</Label>
+                    <Select value={installments} onValueChange={setInstallments}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 47 }, (_, i) => i + 2).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Recurring toggle */}
           <div className="space-y-3">

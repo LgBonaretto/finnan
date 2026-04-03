@@ -32,7 +32,11 @@
       "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>console.log\\(JSON.parse\\(d\\).version\\)\\)\")",
       "Bash(find \"/c/Users/luisg/OneDrive/Documentos/App v2/finnan/app/\\(app\\)\" -maxdepth 2 -type d)",
       "Bash(npx tsx:*)",
-      "Bash(ls -la \"/c/Users/luisg/OneDrive/Documentos/App v2/finnan/public/logo\"*)"
+      "Bash(ls -la \"/c/Users/luisg/OneDrive/Documentos/App v2/finnan/public/logo\"*)",
+      "Bash(docker compose:*)",
+      "Bash(node -e \"const p = require\\('pluggy-sdk'\\); console.log\\(Object.keys\\(p\\).slice\\(0,30\\)\\)\")",
+      "Bash(node -e \"const p = require\\('pluggy-sdk'\\); console.log\\(typeof p.PluggyClient, typeof p.default\\)\")",
+      "Bash(node -e \"const {PluggyClient} = require\\('pluggy-sdk'\\); const c = new PluggyClient\\({clientId:'x',clientSecret:'y'}\\); console.log\\(Object.getOwnPropertyNames\\(Object.getPrototypeOf\\(c\\)\\).sort\\(\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\luisg\\OneDrive\\Documentos\\App v2\\finnan\\app\\(auth)\\invite"

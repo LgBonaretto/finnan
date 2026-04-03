@@ -147,6 +147,7 @@ model Group {
   auditLogs     AuditLog[]
   invites       GroupInvite[]
   activityLogs  ActivityLog[]
+  creditCards   CreditCard[]
 
   @@map("groups")
 }
@@ -218,6 +219,10 @@ model Transaction {
   recurringDay         Int?            @map("recurring_day")
   nextOccurrence       DateTime?       @map("next_occurrence")
   parentTransactionId  String?         @map("parent_transaction_id")
+  creditCardId         String?         @map("credit_card_id")
+  installmentNumber    Int?            @map("installment_number")
+  installmentTotal     Int?            @map("installment_total")
+  installmentGroupId   String?         @map("installment_group_id")
   recurrence           Json?
   attachments          String[]
   tags                 String[]
@@ -230,10 +235,12 @@ model Transaction {
   category          Category?    @relation(fields: [categoryId], references: [id])
   parentTransaction Transaction? @relation("RecurringChildren", fields: [parentTransactionId], references: [id])
   childTransactions Transaction[] @relation("RecurringChildren")
+  creditCard        CreditCard?  @relation(fields: [creditCardId], references: [id])
 
   @@index([groupId, date(sort: Desc)])
   @@index([groupId, createdAt(sort: Desc)])
   @@index([nextOccurrence])
+  @@index([installmentGroupId])
   @@map("transactions")
 }
 
@@ -249,6 +256,26 @@ model Budget {
 
   @@unique([groupId, categoryId, month])
   @@map("budgets")
+}
+
+model CreditCard {
+  id          String    @id @default(cuid())
+  groupId     String    @map("group_id")
+  name        String
+  brand       String?
+  lastDigits  String?   @map("last_digits")
+  closingDay  Int       @map("closing_day")
+  dueDay      Int       @map("due_day")
+  limitAmount Decimal   @default(0) @db.Decimal(15, 2) @map("limit_amount")
+  color       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  group        Group         @relation(fields: [groupId], references: [id])
+  transactions Transaction[]
+
+  @@index([groupId])
+  @@map("credit_cards")
 }
 
 // ─── GOALS ───────────────────────────────────────────────────────────────────
