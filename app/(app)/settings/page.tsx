@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getGroups } from '@/actions/groups'
 import { getMembers } from '@/actions/members'
+import { getConnectedBanks } from '@/actions/pluggy'
 import { SettingsTabs } from '@/components/settings-tabs'
 
 export default async function SettingsPage() {
@@ -27,6 +28,13 @@ export default async function SettingsPage() {
     userRole = group.role
   }
 
+  let connectedBanks: Awaited<ReturnType<typeof getConnectedBanks>> = []
+  try {
+    connectedBanks = await getConnectedBanks()
+  } catch {
+    // Pluggy may not be configured
+  }
+
   return (
     <SettingsTabs
       user={{ id: user.id, name: user.name ?? '', email: user.email ?? '' }}
@@ -40,6 +48,7 @@ export default async function SettingsPage() {
         joinedAt: m.joinedAt,
       }))}
       userRole={userRole}
+      connectedBanks={connectedBanks}
     />
   )
 }

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { updateProfile, updateGroup } from '@/actions/auth'
 import { inviteMember, removeMember, updateMemberRole } from '@/actions/members'
+import { disconnectBank, syncBankTransactions } from '@/actions/pluggy'
+import { PluggyConnectButton } from '@/components/pluggy-connect'
 import {
   User,
   Mail,
@@ -13,6 +15,9 @@ import {
   LogOut,
   Trash2,
   CreditCard,
+  Landmark,
+  RefreshCw,
+  Unplug,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,11 +55,20 @@ type Member = {
   joinedAt: Date | string
 }
 
+type ConnectedBank = {
+  itemId: string
+  connectorName: string
+  connectorLogo: string | null
+  status: string
+  lastUpdated: string | null
+}
+
 interface Props {
   user: { id: string; name: string; email: string }
   group: { id: string; name: string } | null
   members: Member[]
   userRole: string | null
+  connectedBanks?: ConnectedBank[]
 }
 
 const roleLabels: Record<string, string> = {
@@ -94,7 +108,7 @@ function getAvatarColor(name?: string | null): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export function SettingsTabs({ user, group, members, userRole }: Props) {
+export function SettingsTabs({ user, group, members, userRole, connectedBanks = [] }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -184,6 +198,7 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="group">Grupo</TabsTrigger>
+          <TabsTrigger value="banks">Bancos</TabsTrigger>
           <TabsTrigger value="preferences">Preferências</TabsTrigger>
           <TabsTrigger value="account">Conta</TabsTrigger>
         </TabsList>
@@ -461,6 +476,115 @@ export function SettingsTabs({ user, group, members, userRole }: Props) {
               )}
             </>
           )}
+        </TabsContent>
+
+        {/* ── Banks ── */}
+        <TabsContent value="banks" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Landmark className="size-4" />
+                Bancos Conectados
+              </CardTitle>
+              <CardDescription>
+                Conecte suas contas bancárias via Open Finance para importar transações automaticamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {connectedBanks.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                  <Landmark className="mx-auto mb-2 size-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum banco conectado ainda.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {connectedBanks.map((bank) => (
+                    <div
+                      key={bank.itemId}
+                      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                    >
+                      {bank.connectorLogo ? (
+                        <img
+                          src={bank.connectorLogo}
+                          alt={bank.connectorName}
+                          className="size-10 rounded-lg object-contain"
+                        />
+                      ) : (
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                          <Landmark className="size-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {bank.connectorName}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={bank.status === 'UPDATED' ? 'secondary' : 'outline'}
+                            className="text-[10px]"
+                          >
+                            {bank.status === 'UPDATED'
+                              ? 'Conectado'
+                              : bank.status === 'UPDATING'
+                                ? 'Sincronizando...'
+                                : bank.status === 'LOGIN_ERROR'
+                                  ? 'Erro de login'
+                                  : bank.status}
+                          </Badge>
+                          {bank.lastUpdated && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(bank.lastUpdated).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          title="Sincronizar"
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              await syncBankTransactions(bank.itemId)
+                              router.refresh()
+                            })
+                          }}
+                        >
+                          <RefreshCw className="size-4" />
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          title="Desconectar"
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              await disconnectBank(bank.itemId)
+                              router.refresh()
+                            })
+                          }}
+                        >
+                          <Unplug className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <PluggyConnectButton />
+            </CardFooter>
+          </Card>
         </TabsContent>
 
         {/* ── Preferences ── */}
